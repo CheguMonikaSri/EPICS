@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dean Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    :root { --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --text: #0f172a; --muted: #64748b; --border: #e5e7eb; --border-strong: #cbd5e1; --primary: #2563eb; --primary-hover: #1d4ed8; --ring: #3b82f6; --success: #16a34a; --danger: #dc2626; --warn: #f59e0b; --radius: 14px; --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.06); --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.25); }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    .visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .app { display: flex; min-height: 100vh; }
+    .sidebar { width: 280px; flex: 0 0 280px; background: #0b1220; color: #e5e7eb; display: flex; flex-direction: column; padding: 24px 16px; gap: 24px; position: sticky; top: 0; height: 100vh; }
+    .brand { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
+    .brand img { width: 120px; height: auto; border-radius: 12px; }
+    .brand h2 { font-size: 18px; font-weight: 700; margin: 0; }
+    .sidebar-nav { width: 100%; list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; }
+    .sidebar-nav li { padding: 12px 16px; border-radius: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s background; }
+    .sidebar-nav li:not(.logout-btn):hover { background: rgba(255, 255, 255, 0.1); }
+    .sidebar-nav li.active { background: var(--primary); color: #fff; }
+    .logout-btn { margin-top: auto; }
+    .logout-btn:hover { background: rgba(220, 38, 38, 0.2); color: var(--danger); }
+    .main { flex: 1; min-width: 0; padding: 28px; }
+    h1, h2 { margin: 0 0 18px; font-size: 32px; line-height: 1.2; }
+    h2 { font-size: 24px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 16px; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--warn); background: #fffbeb; }
+    .stat-info { display: flex; flex-direction: column; }
+    .stat-title { font-weight: 600; color: var(--muted); font-size: 14px; }
+    .stat-count { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1.1; }
+    .departments { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin: 18px 0 8px; }
+    .dept-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 16px; text-align: center; font-weight: 800; cursor: pointer; box-shadow: var(--shadow); transition: all 0.2s ease-in-out; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .dept-card i { font-size: 24px; color: var(--primary); }
+    .dept-card:hover { transform: translateY(-4px); border-color: var(--border-strong); background: #eef2ff; box-shadow: 0 0 20px 5px rgba(37, 99, 235, 0.15); }
+    .activity-section { margin-top: 32px; }
+    .activity-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+    .activity-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; }
+    .activity-icon.arrived { background: var(--primary); }
+    .activity-icon.approved { background: var(--success); }
+    .activity-details p { margin: 0; }
+    .activity-details .subject { font-weight: 600; }
+    .activity-details .meta { font-size: 12px; color: var(--muted); }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.6); justify-content: center; align-items: center; padding: 16px; z-index: 100; }
+    .modal[aria-hidden="false"] { display: flex; }
+    .modal-content { background: var(--surface); width: min(720px, 92vw); border-radius: 16px; padding: 20px 20px 16px; box-shadow: var(--shadow-lg); position: relative; }
+    .modal-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .close { background: transparent; border: 0; font-size: 22px; color: var(--muted); cursor: pointer; }
+    .modal .row { display: flex; gap: 10px; color: var(--muted); font-size: 14px; }
+    .modal textarea { width: 100%; height: 96px; margin: 10px 0; padding: 10px; border: 1px solid var(--border); border-radius: 10px; }
+    .actions { display: flex; gap: 10px; margin: 6px 0 10px; }
+    .btn { padding: 10px 14px; border-radius: 10px; cursor: pointer; border: 0; font-weight: 600; transition: background-color 0.2s, opacity 0.2s; }
+    .btn:disabled { background-color: #9ca3af; cursor: not-allowed; opacity: 0.6; }
+    .approve { background: var(--success); color: #fff; }
+    .forward { background: var(--primary); color: #fff; }
+    .reject { background: var(--danger); color: #fff; }
+    .mutedBtn { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+    .pipeline { margin-top: 10px; display: flex; justify-content: space-between; gap: 10px; }
+    .step { flex: 1; text-align: center; position: relative; color: #334155; font-weight: 700; }
+    .step::after { content: ""; position: absolute; top: 14px; right: -50%; width: 100%; height: 3px; background: #e2e8f0; z-index: -1; }
+    .step:last-child::after { display: none; }
+    .step.active { color: var(--success); }
+    .type-filter { display: flex; gap: 8px; margin-bottom: 16px; }
+    .type-btn { padding: 8px 16px; font-weight: 600; border-radius: 8px; cursor: pointer; background: var(--surface); border: 1px solid var(--border); color: var(--muted); transition: all 0.2s; }
+    .type-btn:hover { background: var(--surface-2); }
+    .type-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .search-bar { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 20px; background: #fff; }
+    .search-bar:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.25); }
+    .search-bar select, .search-bar input { border: none; padding: 12px; margin: 0; background: transparent; flex-grow: 1; }
+    .search-bar select:not(#deanSearchType) { border-left: 1px solid var(--border); }
+    .search-bar > select { flex-grow: 0; border-right: 1px solid var(--border); background: var(--surface-2); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border); }
+    thead th { background: var(--surface-2); font-weight: 700; }
+    tbody tr:hover { background: #f1f5f9; }
+    #noResults td { text-align: center; padding: 20px; font-style: italic; color: var(--muted); }
+    .status-badge { padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; text-transform: capitalize; }
+    .status-badge.pending { background: #fffbeb; color: #b45309; }
+    .status-badge.validated { background: #eef2ff; color: #312e81; }
+    .status-badge.forwarded { background: #eff6ff; color: #1d4ed8; }
+    .status-badge.approved { background: #f0fdf4; color: #15803d; }
+    .status-badge.rejected { background: #fef2f2; color: #b91c1c; }
+    /* Styles for Pagination and Refresh */
+    .pagination-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 16px; }
+    .pagination-container { display: flex; align-items: center; gap: 4px; }
+    .page-btn { padding: 8px 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .page-btn:hover { background: var(--surface-2); }
+    .page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .page-btn:disabled { background: var(--surface-2); color: var(--muted); cursor: not-allowed; }
+    #rowsPerPageSelect { padding: 8px; border-radius: 8px; border: 1px solid var(--border); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand"><img src="logo.png" alt="Institution logo" /><h2>Dean Dashboard</h2></div>
+      <ul class="sidebar-nav">
+        <li id="navDashboard" class="active" onclick="showView('dashboard')"><i class="fas fa-tachometer-alt"></i> Dashboard</li>
+        <li id="navLetters" onclick="showView('letters')"><i class="fas fa-envelope-open-text"></i> View All Letters</li>
+        <li class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</li>
+      </ul>
+    </aside>
+    <main class="main">
+      <div id="dashboardView">
+        <h1>Dean's Dashboard</h1>
+        <section><h2 class="visually-hidden">Key Statistics</h2><div class="stats-grid"><div class="stat-card"><div class="stat-icon"><i class="fas fa-clock"></i></div><div class="stat-info"><span class="stat-title">Pending Approvals</span><span class="stat-count" id="pendingCount">0</span></div></div></div></section>
+        <section>
+          <h2>Departments</h2>
+          <div class="departments">
+            <button class="dept-card" onclick="navigateToLetters('CSE')"><i class="fas fa-laptop-code"></i> CSE</button>
+            <button class="dept-card" onclick="navigateToLetters('IT')"><i class="fas fa-network-wired"></i> IT</button>
+            <button class="dept-card" onclick="navigateToLetters('ECE')"><i class="fas fa-microchip"></i> ECE</button>
+            <button class="dept-card" onclick="navigateToLetters('EEE')"><i class="fas fa-bolt"></i> EEE</button>
+            <button class="dept-card" onclick="navigateToLetters('EIE')"><i class="fas fa-ruler-combined"></i> EIE</button>
+            <button class="dept-card" onclick="navigateToLetters('ME')"><i class="fas fa-cogs"></i> ME</button>
+            <button class="dept-card" onclick="navigateToLetters('Civil')"><i class="fas fa-hard-hat"></i> Civil</button>
+            <button class="dept-card" onclick="navigateToLetters('MBA')"><i class="fas fa-briefcase"></i> MBA</button>
+            <button class="dept-card" onclick="navigateToLetters('MCA')"><i class="fas fa-database"></i> MCA</button>
+          </div>
+        </section>
+        <section class="activity-section"><h2>Recent Activity</h2><div id="recentActivity"></div></section>
+      </div>
+      <div id="lettersView" style="display: none">
+        <h1>View Letters <button id="refreshBtn" class="btn" title="Refresh Letters" style="padding: 6px 10px; font-size: 14px; vertical-align: middle; margin-left: 10px;"><i class="fas fa-sync-alt"></i></button></h1>
+        <div class="type-filter" id="typeFilter"><button class="type-btn active" data-type="All">All</button><button class="type-btn" data-type="Payment">Payment</button><button class="type-btn" data-type="Permission">Permission</button></div>
+        <div class="search-bar">
+          <select id="deanSearchType"><option value="subject">Subject</option><option value="id">ID</option><option value="date">Date</option><option value="dept">Department</option><option value="amount">Amount</option></select>
+          <input id="deanSearchInput" type="text" /><select id="deanDeptSelect" style="display: none;"></select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>Subject</th><th>Dept</th><th>Type</th><th>Amount</th><th>Date</th><th>Current Stage</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="deanLettersBody"></tbody>
+            <tfoot><tr id="noResults" style="display: none;"><td colspan="9">No letters found.</td></tr></tfoot>
+          </table>
+        </div>
+        <div class="pagination-controls">
+          <div class="pagination-container" id="paginationContainer"></div>
+          <div>
+            <label for="rowsPerPageSelect" style="font-weight: 600; color: var(--muted); font-size: 14px;">Rows per page:</label>
+            <select id="rowsPerPageSelect">
+              <option value="10">10</option>
+              <option value="20" selected>20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal" id="letterModal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header"><h2 id="mSubject"></h2><button class="close" onclick="closeModal()">&times;</button></div>
+      <p class="row"><strong>ID:</strong> <span id="mId"></span> &middot; <strong>Date:</strong> <span id="mDate"></span> &middot; <strong>Type:</strong> <span id="mType"></span></p>
+      <div class="pipeline" id="pipeline"></div>
+      <h4>Remarks</h4>
+      <textarea id="mRemarks" placeholder="Add remarks (required for rejection)..."></textarea>
+      <a id="viewLink" href="#" target="_blank" class="btn mutedBtn">View Original Softcopy</a>
+      <div style="margin-top: 10px">
+        <label for="mSigned">Upload signed copy (PDF):</label>
+        <input type="file" id="mSigned" accept="application/pdf" style="width: 100%; margin-top: 6px"/>
+      </div>
+      <div class="actions">
+        <button class="btn approve" id="mApproveBtn" onclick="doApprove()">Approve</button>
+        <button class="btn forward" id="mForwardBtn" onclick="doForward()">Forward</button>
+        <button class="btn reject" id="mRejectBtn" onclick="doReject()">Reject</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const departments = ['CSE', 'IT', 'ECE', 'EEE', 'EIE', 'ME', 'Civil', 'MBA', 'MCA'];
+    let deanLettersData = [];
+    let currentFilteredData = [];
+    let currentLetterTypeFilter = 'All';
+    let activeLetter = null;
+    let currentPage = 1;
+    let rowsPerPage = 20;
+
+    function logout() { localStorage.removeItem('authToken'); window.location.href = './login.html'; }
+
+    function showView(viewName) {
+      document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
+      const activeLink = document.getElementById(`nav${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`);
+      if(activeLink) activeLink.classList.add("active");
+      document.getElementById("dashboardView").style.display = viewName === 'dashboard' ? 'block' : 'none';
+      document.getElementById("lettersView").style.display = viewName === 'letters' ? 'block' : 'none';
+      if (viewName === 'letters') {
+          document.querySelector('#typeFilter .type-btn.active').classList.remove('active');
+          document.querySelector('#typeFilter .type-btn[data-type="All"]').classList.add('active');
+          currentLetterTypeFilter = 'All';
+          performDeanSearch();
+      }
+    }
+
+    function navigateToLetters(dept) {
+      showView('letters');
+      document.getElementById('deanSearchType').value = 'dept';
+      handleDeanSearchTypeChange();
+      const deptSelect = document.getElementById('deanDeptSelect');
+      deptSelect.value = dept;
+      deptSelect.dispatchEvent(new Event('change'));
+    }
+
+    function openLetter(letter) {
+      activeLetter = letter;
+      document.getElementById("mSubject").textContent = letter.subject;
+      document.getElementById("mId").textContent = letter.id;
+      document.getElementById("mDate").textContent = letter.date;
+      document.getElementById("mType").textContent = letter.type;
+      const viewLink = document.getElementById("viewLink");
+      if(letter.filePath) {
+        viewLink.href = `http://localhost:3000/${letter.filePath.replace(/\\/g, '/')}`;
+        viewLink.style.display = 'inline-block';
+      } else { viewLink.style.display = 'none'; }
+      setPipeline(letter);
+      
+      const approveBtn = document.getElementById('mApproveBtn');
+      const forwardBtn = document.getElementById('mForwardBtn');
+      const rejectBtn = document.getElementById('mRejectBtn');
+      const actions = document.querySelector('#letterModal .actions');
+
+      if (letter.stage === 'Dean') {
+          if (letter.status === 'Pending') {
+              actions.style.display = 'flex';
+              approveBtn.disabled = false;
+              forwardBtn.disabled = true;
+              rejectBtn.disabled = false;
+              approveBtn.textContent = 'Approve';
+          } else if (letter.status === 'Validated') {
+              actions.style.display = 'flex';
+              approveBtn.disabled = true;
+              approveBtn.textContent = 'Approved ✔';
+              forwardBtn.disabled = false;
+              rejectBtn.disabled = false;
+          } else {
+              actions.style.display = 'none';
+          }
+      } else {
+          actions.style.display = 'none';
+      }
+      document.getElementById("letterModal").setAttribute("aria-hidden", "false");
+    }
+
+    function closeModal() { document.getElementById("letterModal").setAttribute("aria-hidden", "true"); activeLetter = null; }
+
+    function setPipeline(letter) {
+      const pipelineContainer = document.getElementById("pipeline");
+      const stages = letter.type === "Payment" ? ["Clerk", "Dean", "Registrar", "VC", "Accounts"] : ["Clerk", "Dean", "Registrar", "VC"];
+      pipelineContainer.innerHTML = "";
+      let currentStageIndex = stages.indexOf(letter.stage);
+      if(letter.status === 'Approved') currentStageIndex = 100; // Mark all as complete
+      stages.forEach((stage, index) => {
+        const step = document.createElement("div");
+        step.className = "step"; step.textContent = stage;
+        if (index <= currentStageIndex) step.classList.add("active");
+        pipelineContainer.appendChild(step);
+      });
+    }
+    
+    async function handleAction(action) {
+        const token = localStorage.getItem('authToken');
+        if (!activeLetter || !token) return;
+        const remarks = document.getElementById("mRemarks").value;
+        const signedFile = document.getElementById("mSigned").files[0];
+        if (action === 'reject' && !remarks.trim()) { alert("Please provide remarks for rejection."); return; }
+        if ((action === 'approve' || action === 'forward') && !signedFile) { alert("Please upload the signed soft copy to proceed."); return; }
+        const formData = new FormData();
+        formData.append('action', action);
+        formData.append('remarks', remarks);
+        if (signedFile) formData.append('signedFile', signedFile);
+        try {
+            const response = await fetch(`http://localhost:3000/api/letters/${activeLetter.id}`, {
+                method: 'PUT', headers: { 'Authorization': `Bearer ${token}` }, body: formData
+            });
+            if (!response.ok) throw new Error(`Action ${action} failed`);
+            const data = await response.json();
+            if (action === 'approve') {
+                const index = deanLettersData.findIndex(l => l.id === data.letter.id);
+                if (index !== -1) deanLettersData[index] = data.letter;
+                openLetter(data.letter);
+                performDeanSearch();
+            } else {
+                alert(`Letter successfully processed!`);
+                closeModal();
+                await fetchLetters();
+            }
+        } catch (error) { alert(`Error: ${error.message}`); console.error(error); }
+    }
+
+    function doApprove() { handleAction('approve'); }
+    function doForward() { handleAction('forward'); }
+    function doReject() { handleAction('reject'); }
+    
+    function populateDeanTable(data, page = 1) {
+        const tableBody = document.getElementById('deanLettersBody');
+        const noResultsRow = document.getElementById('noResults');
+        tableBody.innerHTML = '';
+        
+        const startIndex = (page - 1) * rowsPerPage;
+        const paginatedData = data.slice(startIndex, startIndex + rowsPerPage);
+
+        noResultsRow.style.display = data.length === 0 ? 'table-row' : 'none';
+        paginatedData.forEach(letter => {
+            const row = tableBody.insertRow();
+            let statusText = letter.status;
+            if (letter.status === 'Pending' && letter.stage !== 'Dean') {
+                statusText = `Pending @ ${letter.stage}`;
+            } else if (letter.status === 'Approved') {
+                statusText = `Approved by ${letter.stage}`;
+            } else if (letter.status === 'Validated') {
+                statusText = `Approved by Dean`;
+            }
+            row.innerHTML = `
+                <td>${letter.id}</td><td>${letter.subject}</td><td>${letter.dept}</td><td>${letter.type}</td>
+                <td>${letter.amount > 0 ? `₹${letter.amount.toLocaleString('en-IN')}` : 'N/A'}</td>
+                <td>${letter.date}</td><td><strong style="color: var(--primary);">${letter.stage}</strong></td>
+                <td><span class="status-badge ${letter.status.toLowerCase()}" title="Remarks: ${letter.remarks || 'None'}">${statusText}</span></td>
+                <td><button class="btn" onclick='openLetter(${JSON.stringify(letter)})'>Details</button></td>
+            `;
+        });
+    }
+
+    function setupPagination(data) {
+        const paginationContainer = document.getElementById('paginationContainer');
+        paginationContainer.innerHTML = '';
+        const pageCount = Math.ceil(data.length / rowsPerPage);
+
+        // Previous Button
+        const prevButton = document.createElement('button');
+        prevButton.classList.add('page-btn');
+        prevButton.innerHTML = '&laquo; Prev';
+        prevButton.disabled = currentPage === 1;
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                populateDeanTable(data, currentPage);
+                setupPagination(data);
+            }
+        });
+        paginationContainer.appendChild(prevButton);
+
+        // Page Number Buttons (simplified for brevity)
+        for (let i = 1; i <= pageCount; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.classList.add('page-btn');
+            pageButton.textContent = i;
+            if (i === currentPage) {
+                pageButton.classList.add('active');
+            }
+            pageButton.addEventListener('click', () => {
+                currentPage = i;
+                populateDeanTable(data, currentPage);
+                setupPagination(data);
+            });
+            paginationContainer.appendChild(pageButton);
+        }
+
+        // Next Button
+        const nextButton = document.createElement('button');
+        nextButton.classList.add('page-btn');
+        nextButton.innerHTML = 'Next &raquo;';
+        nextButton.disabled = currentPage === pageCount;
+        nextButton.addEventListener('click', () => {
+            if (currentPage < pageCount) {
+                currentPage++;
+                populateDeanTable(data, currentPage);
+                setupPagination(data);
+            }
+        });
+        paginationContainer.appendChild(nextButton);
+    }
+
+    function performDeanSearch() {
+        let filteredByType = deanLettersData;
+        if (currentLetterTypeFilter !== 'All') {
+            filteredByType = deanLettersData.filter(letter => letter.type === currentLetterTypeFilter);
+        }
+        const type = document.getElementById('deanSearchType').value;
+        let query;
+        if (type === 'dept') {
+            query = document.getElementById('deanDeptSelect').value.toLowerCase();
+        } else {
+            query = document.getElementById('deanSearchInput').value.toLowerCase();
+        }
+        currentFilteredData = filteredByType.filter(letter => {
+            if (query === '') return true;
+            let valueToSearch = (letter[type] || '').toString().toLowerCase();
+            return valueToSearch.includes(query);
+        });
+        currentPage = 1; // Reset to first page after search
+        populateDeanTable(currentFilteredData, currentPage);
+        setupPagination(currentFilteredData);
+    }
+    
+    function handleDeanSearchTypeChange() {
+        const searchInput = document.getElementById('deanSearchInput');
+        const deptSelect = document.getElementById('deanDeptSelect');
+        const searchType = document.getElementById('deanSearchType').value;
+        if (searchType === 'dept') {
+            searchInput.style.display = 'none'; deptSelect.style.display = 'block';
+        } else {
+            searchInput.style.display = 'block'; deptSelect.style.display = 'none';
+            searchInput.type = searchType === 'date' ? 'date' : 'text';
+            searchInput.placeholder = `Search by ${searchType}...`;
+        }
+        searchInput.value = ''; deptSelect.value = '';
+        performDeanSearch();
+    }
+    function populateDeptDropdown() {
+        const deptSelect = document.getElementById('deanDeptSelect');
+        deptSelect.innerHTML = '<option value="">All Departments</option>';
+        departments.forEach(dept => {
+            const option = document.createElement('option');
+            option.value = dept; option.textContent = dept;
+            deptSelect.appendChild(option);
+        });
+    }
+
+    async function fetchLetters() {
+        const token = localStorage.getItem('authToken');
+        if (!token) { logout(); return; }
+        try {
+            const response = await fetch('http://localhost:3000/api/letters', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!response.ok) { if (response.status === 401 || response.status === 403) logout(); return; }
+            const letters = await response.json();
+            deanLettersData = letters;
+            
+            const pendingCount = deanLettersData.filter(l => l.stage === 'Dean' && (l.status === 'Pending' || l.status === 'Validated')).length;
+            document.getElementById('pendingCount').textContent = pendingCount;
+            
+            const activityContainer = document.getElementById("recentActivity");
+            activityContainer.innerHTML = '';
+            letters.slice().reverse().slice(0, 3).forEach(letter => {
+                const card = document.createElement("div");
+                card.className = "activity-card";
+                card.innerHTML = `<div class="activity-icon arrived"><i class="fas fa-arrow-down"></i></div><div class="activity-details"><p class="subject">${letter.subject}</p><p class="meta">From ${letter.dept} Dept - ${letter.date}</p></div>`;
+                activityContainer.appendChild(card);
+            });
+
+            performDeanSearch(); // This will populate table and pagination
+        } catch (error) { console.error('Failed to fetch letters:', error); }
+    }
+    
+    document.addEventListener("DOMContentLoaded", () => {
+      fetchLetters();
+      const typeFilter = document.getElementById('typeFilter');
+      typeFilter.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            typeFilter.querySelector('.active').classList.remove('active');
+            e.target.classList.add('active');
+            currentLetterTypeFilter = e.target.dataset.type;
+            performDeanSearch();
+        }
+      });
+      populateDeptDropdown();
+      document.getElementById('deanSearchInput').addEventListener('input', performDeanSearch);
+      document.getElementById('deanDeptSelect').addEventListener('change', performDeanSearch);
+      document.getElementById('deanSearchType').addEventListener('change', handleDeanSearchTypeChange);
+      
+      document.getElementById('refreshBtn').addEventListener('click', fetchLetters);
+
+      document.getElementById('rowsPerPageSelect').addEventListener('change', (e) => {
+          rowsPerPage = parseInt(e.target.value, 10);
+          currentPage = 1;
+          populateDeanTable(currentFilteredData, currentPage);
+          setupPagination(currentFilteredData);
+      });
+
+      handleDeanSearchTypeChange();
+    });
+  </script>
+</body>
+</html>

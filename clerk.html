@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Clerk Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --primary: #6c5ce7; --dark: #2c3e50; --success: #27ae60; --warn: #f39c12; --danger: #e74c3c; --muted: #6c757d; --border-color: #dee2e6; --light-gray: #f8f9fa; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
+    body { background: linear-gradient(135deg, #74ebd5, #9face6); color: #333; }
+    header { background: rgba(0,0,0,.7); color: #fff; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(10px); box-shadow: 0 4px 10px rgba(0,0,0,.3); }
+    header img { height: 50px; }
+    header h1 { font-size: 22px; }
+    header button { background: #ff4757; border: 0; color: #fff; padding: 10px 14px; border-radius: 10px; cursor: pointer; }
+    .container { display: flex; height: calc(100vh - 80px); }
+    nav { width: 240px; background: rgba(0,0,0,.8); color: #fff; backdrop-filter: blur(12px); overflow-y: auto; padding: 15px; }
+    nav ul { list-style: none; padding: 0; }
+    nav li { padding: 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; transition: .2s padding-left, .2s background; border-radius: 8px; }
+    nav li:hover { background: rgba(255,255,255,.18); padding-left: 20px; }
+    nav li.active { background: var(--primary); }
+    main { flex: 1; padding: 25px; overflow-y: auto; }
+    .card { background: rgba(255,255,255,.92); padding: 20px; border-radius: 15px; box-shadow: 0 6px 15px rgba(0,0,0,.2); margin-bottom: 25px; animation: fadeIn .4s ease; }
+    h2 { margin: 0 0 10px; color: var(--dark); }
+    input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--border-color); border-radius: 8px; outline: 0; }
+    button { background: linear-gradient(135deg, var(--primary), #0984e3); color: #fff; padding: 12px 18px; border: 0; border-radius: 10px; cursor: pointer; transition: transform 0.2s; }
+    button:hover { transform: scale(1.03); }
+    .btn.secondary { background: var(--muted); }
+    .btn.secondary i { margin-right: 6px; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .toolbar h2 { margin-bottom: 0; }
+    .search-bar { display: flex; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-bottom: 20px; background: #fff; }
+    .search-bar select { margin: 0; border: none; border-right: 1px solid var(--border-color); border-radius: 0; background-color: var(--light-gray); width: auto; }
+    .search-bar input { margin: 0; border: none; flex-grow: 1; }
+    .table-wrap { overflow-x: auto; border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; min-width: 850px; font-size: 14px; }
+    th, td { padding: 10px 15px; text-align: left; vertical-align: middle; }
+    thead th { background: var(--dark); color: #fff; position: sticky; top: 0; }
+    .details-btn, .resubmit-btn { padding: 5px 12px; font-size: 13px; }
+    .resubmit-btn { background: var(--warn); }
+    .details-row { background: #e9ecef !important; display: none; }
+    .details-row td { padding: 0; }
+    .pipeline-container { padding: 20px; }
+    .pipeline { display: flex; justify-content: space-between; list-style: none; position: relative; padding: 0; margin: 0; }
+    .pipeline::before { content: ''; position: absolute; top: 14px; left: 0; right: 0; height: 3px; background-color: var(--border-color); z-index: 1; }
+    .pipeline-step { position: relative; z-index: 2; text-align: center; flex-basis: 0; flex-grow: 1; }
+    .pipeline-step .step-icon { width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; border: 3px solid white; font-weight: bold; }
+    .pipeline-step .step-label { font-size: 12px; font-weight: 500; color: var(--muted); }
+    .pipeline-step.completed .step-icon { background-color: var(--success); color: white; }
+    .pipeline-step.current .step-icon { background-color: var(--warn); color: white; }
+    .pipeline-step.rejected .step-icon { background-color: var(--danger); color: white; }
+    .pipeline-step.pending .step-icon { background-color: var(--border-color); color: var(--muted); }
+    .status-badge { padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; text-transform: capitalize; }
+    .status-badge[title] { cursor: help; }
+    .status-badge.pending { background: #fffbeb; color: #b45309; }
+    .status-badge.validated, .status-badge.forwarded { background: #eff6ff; color: #1d4ed8; }
+    .status-badge.approved { background: #f0fdf4; color: #15803d; }
+    .status-badge.rejected { background: #fef2f2; color: #b91c1c; }
+    .pagination-controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; }
+    .pagination-controls button:disabled { background: #bdc3c7; cursor: not-allowed; transform: none; }
+    #pageInfo { font-weight: 600; font-size: 15px; color: var(--dark); }
+    .sr-updates { position: fixed; inset: auto 16px 16px auto; background: #111827; color: #fff; padding: 8px 12px; border-radius: 10px; opacity: .95; font-size: 13px; display: none; z-index: 100; }
+    @keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+    /* Add these new CSS rules inside the <style> tag */
+
+.actions-cell {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+.download-btn {
+    background: var(--success);
+    text-decoration: none; /* Removes underline from the link */
+    padding: 5px 12px;
+    font-size: 13px;
+    color: white !important;
+}
+  </style>
+</head>
+<body>
+<header>
+  <img src="logo.png" alt="College Logo">
+  <h1 id="headerTitle">Clerk Dashboard</h1>
+  <button onclick="logout()">Logout</button>
+</header>
+<div class="container">
+  <nav>
+    <ul id="navLinks">
+      <li id="nav-upload" class="active" onclick="showSection('upload'); resetUploadForm();"><i class="fa fa-upload"></i> Upload Letter</li>
+      <li id="nav-records" onclick="showSection('records')"><i class="fa fa-folder-open"></i> View Letters</li>
+      <li id="nav-password" onclick="showSection('password')"><i class="fa fa-key"></i> Change Password</li>
+    </ul>
+  </nav>
+  <main>
+    <section id="upload" class="card">
+      <h2 id="uploadTitle">Upload New Letter</h2>
+      <form id="uploadForm">
+        <input type="hidden" id="letterId" />
+        <label for="subject">Subject: <span style="color:red">*</span></label>
+        <input id="subject" type="text" placeholder="Enter letter subject" required />
+        <label for="letterType">Letter Type:</label>
+        <select id="letterType" required><option value="">-- Select --</option><option value="Permission">Permission</option><option value="Payment">Payment</option></select>
+        <label for="amount">Amount (for Payment Letters):</label>
+        <input id="amount" type="number" placeholder="Enter amount (if applicable)" />
+        <label for="file">Upload File (PDF/Doc): <span id="file-label-required" style="color:red">*</span></label>
+        <input id="file" type="file" accept=".pdf,.doc,.docx" required/>
+        <button type="submit" id="submitBtn">Submit for Approval</button>
+      </form>
+    </section>
+    <section id="records" class="card" style="display:none;">
+      <div class="toolbar">
+        <h2 id="recordsTitle">Uploaded Letters</h2>
+        <button id="reloadBtn" class="btn secondary"><i class="fas fa-sync-alt"></i> Refresh</button>
+      </div>
+      <div class="search-bar">
+        <select id="searchType" aria-label="Search category"><option value="subject" selected>Subject</option><option value="id">ID</option><option value="date">Date</option><option value="amount">Amount</option></select>
+        <input id="searchInput" type="text" aria-label="Search letters" />
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Subject</th><th>Type</th><th>Amount</th><th>Date</th><th>Current Stage</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="lettersBody"></tbody>
+          <tfoot><tr id="noResults" style="display: none;"><td colspan="8">No letters found.</td></tr></tfoot>
+        </table>
+      </div>
+      <div class="pagination-controls">
+        <button id="prevPageBtn" class="btn">« Previous</button>
+        <span id="pageInfo"></span>
+        <button id="nextPageBtn" class="btn">Next »</button>
+      </div>
+    </section>
+    <section id="password" class="card" style="display:none;">
+      <h2>Change Password</h2>
+      <form onsubmit="event.preventDefault(); announce('Password updated');">
+        <label for="oldPwd">Old Password:</label><input id="oldPwd" type="password" required />
+        <label for="newPwd">New Password:</label><input id="newPwd" type="password" required />
+        <label for="confirmPwd">Confirm Password:</label><input id="confirmPwd" type="password" required />
+        <button type="submit">Update</button>
+      </form>
+    </section>
+  </main>
+</div>
+<div id="liveStatus" class="sr-updates" role="status" aria-live="polite" aria-atomic="true"></div>
+<script>
+  let clerkLettersData = [];
+  let filteredData = [];
+  let currentPage = 1;
+  const rowsPerPage = 7;
+  const paymentPipeline = ['Clerk', 'Dean', 'Registrar', 'VC', 'Accounts'];
+  const permissionPipeline = ['Clerk', 'Dean', 'Registrar', 'VC'];
+
+  function showSection(id) {
+    document.querySelectorAll('main .card').forEach(div => div.style.display = 'none');
+    document.getElementById(id).style.display = 'block';
+    document.querySelectorAll('#navLinks li').forEach(li => li.classList.remove('active'));
+    document.getElementById(`nav-${id}`).classList.add('active');
+  }
+
+  function logout() { localStorage.removeItem('authToken'); window.location.href = './login.html'; }
+  function announce(message) {
+      const liveRegion = document.getElementById('liveStatus');
+      liveRegion.textContent = message;
+      liveRegion.style.display = 'block';
+      setTimeout(() => { liveRegion.style.display = 'none'; }, 3000);
+  }
+
+  function createPipelineHTML(letter) {
+      const pipeline = letter.type === 'Payment' ? paymentPipeline : permissionPipeline;
+      const currentIndex = pipeline.indexOf(letter.stage);
+      let html = '<div class="pipeline-container"><ol style="list-style:none; padding:0;" class="pipeline">';
+      pipeline.forEach((stageName, index) => {
+          let statusClass = 'pending'; let iconContent = index + 1;
+          if (letter.status === 'Approved') { statusClass = 'completed'; iconContent = '&#10003;';
+          } else if (index < currentIndex) { statusClass = 'completed'; iconContent = '&#10003;';
+          } else if (index === currentIndex) {
+              if (letter.status === 'Rejected') { statusClass = 'rejected'; iconContent = '&times;';
+              } else { statusClass = 'current'; }
+          }
+          html += `<li class="pipeline-step ${statusClass}"><div class="step-icon">${iconContent}</div><div class="step-label">${stageName}</div></li>`;
+      });
+      return html + '</ol></div>';
+  }
+
+  // Replace the entire old populateTable function with this new one
+
+function populateTable(data) {
+    const tableBody = document.getElementById('lettersBody');
+    tableBody.innerHTML = '';
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    const paginatedData = data.slice(startIndex, endIndex);
+    document.getElementById('noResults').style.display = data.length === 0 ? 'table-row' : 'none';
+    
+    paginatedData.forEach(letter => {
+        const mainRow = tableBody.insertRow();
+        
+        let actionButtonHTML = `<button class="btn details-btn">View Tracking</button>`;
+        if (letter.status === 'Rejected') {
+            actionButtonHTML = `<button class="btn resubmit-btn" onclick='prepareForResubmit(${JSON.stringify(letter)})'>Update & Resubmit</button>`;
+        }
+        
+        
+        let downloadButtonHTML = '';
+        if (letter.signedFilePath) {
+            const downloadUrl = `http://localhost:3000/${letter.signedFilePath.replace(/\\/g, '/')}`;
+            downloadButtonHTML = `<a href="${downloadUrl}" class="btn download-btn" download>Download Latest</a>`;
+        }
+
+        let statusText = letter.status;
+        if (letter.status === 'Pending') { statusText = `Pending @ ${letter.stage}`; }
+        else if (letter.status === 'Approved' || letter.status === 'Validated') { statusText = `Approved by ${letter.stage}`; }
+        
+        mainRow.innerHTML = `
+            <td>${letter.id}</td><td>${letter.subject}</td><td>${letter.type}</td>
+            <td>${letter.amount > 0 ? `₹${letter.amount.toLocaleString('en-IN')}` : 'N/A'}</td>
+            <td>${letter.date}</td><td><strong style="color:var(--primary);">${letter.stage}</strong></td>
+            <td><span class="status-badge ${letter.status.toLowerCase()}" title="Remarks: ${letter.remarks || 'None'}">${statusText}</span></td>
+            <td><div class="actions-cell">${actionButtonHTML}${downloadButtonHTML}</div></td>
+        `;
+
+        const detailsRow = tableBody.insertRow();
+        detailsRow.className = 'details-row';
+        detailsRow.insertCell().innerHTML = createPipelineHTML(letter);
+        detailsRow.cells[0].colSpan = 8;
+    });
+    updatePaginationControls(data.length);
+}
+  
+  function updatePaginationControls(totalItems) {
+    const pageInfo = document.getElementById('pageInfo');
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    const totalPages = Math.ceil(totalItems / rowsPerPage);
+    if (totalPages <= 1) {
+        pageInfo.parentElement.style.display = 'none';
+    } else {
+        pageInfo.parentElement.style.display = 'flex';
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
+    }
+  }
+
+  function prepareForResubmit(letter) {
+    showSection('upload');
+    document.getElementById('uploadTitle').textContent = `Update & Resubmit Letter: ${letter.id}`;
+    document.getElementById('letterId').value = letter.id;
+    document.getElementById('subject').value = letter.subject;
+    document.getElementById('letterType').value = letter.type;
+    document.getElementById('amount').value = letter.amount > 0 ? letter.amount : '';
+    document.getElementById('submitBtn').textContent = 'Resubmit to Dean';
+    document.getElementById('file').required = false; 
+    document.getElementById('file-label-required').style.display = 'none';
+  }
+
+  function resetUploadForm() {
+    document.getElementById('uploadTitle').textContent = 'Upload New Letter';
+    document.getElementById('uploadForm').reset();
+    document.getElementById('letterId').value = '';
+    document.getElementById('submitBtn').textContent = 'Submit for Approval';
+    document.getElementById('file').required = true;
+    document.getElementById('file-label-required').style.display = 'inline';
+  }
+
+  async function handleFormSubmit(event) {
+    event.preventDefault();
+    const letterId = document.getElementById('letterId').value;
+    const token = localStorage.getItem('authToken');
+    const formData = new FormData();
+    formData.append('subject', document.getElementById('subject').value);
+    formData.append('type', document.getElementById('letterType').value);
+    formData.append('amount', document.getElementById('amount').value || 0);
+    const newFile = document.getElementById('file').files[0];
+    if (newFile) formData.append('file', newFile);
+    let url, method, successMessage, errorMessage;
+    if (letterId) {
+        url = `http://localhost:3000/api/letters/${letterId}/resubmit`;
+        method = 'POST';
+        successMessage = 'Letter resubmitted successfully!';
+        errorMessage = 'Error resubmitting letter.';
+    } else {
+        url = 'http://localhost:3000/api/letters';
+        method = 'POST';
+        formData.append('date', new Date().toISOString().split('T')[0]);
+        successMessage = 'Letter submitted successfully!';
+        errorMessage = 'Error uploading letter.';
+    }
+    try {
+        const response = await fetch(url, { method, headers: { 'Authorization': `Bearer ${token}` }, body: formData });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Request failed');
+        if(data.estimatedTime) successMessage += ` Est. approval: ${data.estimatedTime}`;
+        announce(successMessage);
+        resetUploadForm();
+        await fetchLetters();
+        showSection('records');
+    } catch (error) {
+        announce(errorMessage);
+        console.error(error);
+    }
+  }
+
+  function performSearch() {
+    const type = document.getElementById('searchType').value;
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    filteredData = clerkLettersData.filter(letter => (letter[type] || '').toString().toLowerCase().includes(query));
+    currentPage = 1;
+    populateTable(filteredData);
+  }
+
+  function handleSearchTypeChange() {
+      const searchInput = document.getElementById('searchInput');
+      const searchType = document.getElementById('searchType').value;
+      searchInput.type = searchType === 'date' ? 'date' : 'text';
+      searchInput.placeholder = `Search by ${searchType.charAt(0).toUpperCase() + searchType.slice(1)}...`;
+      searchInput.value = '';
+      performSearch();
+  }
+
+  async function fetchLetters() {
+      const token = localStorage.getItem('authToken');
+      if (!token) { logout(); return; }
+      try {
+          const response = await fetch('http://localhost:3000/api/letters', { headers: { 'Authorization': `Bearer ${token}` } });
+          if (!response.ok) { if (response.status === 401 || response.status === 403) logout(); return; }
+          clerkLettersData = await response.json();
+          performSearch();
+      } catch (error) { console.error('Failed to fetch letters:', error); }
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) { logout(); return; }
+    try {
+        const decodedToken = JSON.parse(atob(token.split('.')[1]));
+        const dept = decodedToken.department || 'Your';
+        document.getElementById('headerTitle').textContent = `Clerk Dashboard - ${dept} Department`;
+        document.getElementById('uploadTitle').textContent = `Upload New Letter for ${dept}`;
+        document.getElementById('recordsTitle').textContent = `Uploaded Letters for ${dept}`;
+    } catch (e) { console.error("Could not decode token", e); }
+    
+    await fetchLetters();
+    handleSearchTypeChange();
+
+    document.getElementById('uploadForm').addEventListener('submit', handleFormSubmit);
+    document.getElementById('searchInput').addEventListener('input', performSearch);
+    document.getElementById('searchType').addEventListener('change', handleSearchTypeChange);
+    
+    document.getElementById('lettersBody').addEventListener('click', (event) => {
+        if (event.target.classList.contains('details-btn')) {
+            const btn = event.target;
+            const detailsRow = btn.closest('tr').nextElementSibling;
+            detailsRow.style.display = detailsRow.style.display === 'none' ? 'table-row' : 'none';
+            btn.textContent = detailsRow.style.display === 'none' ? 'View Tracking' : 'Hide Tracking';
+        }
+    });
+
+    document.getElementById('reloadBtn').addEventListener('click', () => {
+        announce('Refreshing letters...');
+        fetchLetters();
+    });
+
+    document.getElementById('prevPageBtn').addEventListener('click', () => {
+        if (currentPage > 1) { currentPage--; populateTable(filteredData); }
+    });
+    document.getElementById('nextPageBtn').addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+        if (currentPage < totalPages) { currentPage++; populateTable(filteredData); }
+    });
+  });
+</script>
+</body>
+</html>
