@@ -95,7 +95,7 @@
     tbody tr:hover { background: #f1f5f9; }
     #noResults td { text-align: center; padding: 20px; font-style: italic; color: var(--muted); }
     .status-badge { padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; text-transform: capitalize; }
-    .status-badge.pending { background: #fffbeb; color: #b45309; }
+    .status-badge.pending, .status-badge.overdue { background: #fffbeb; color: #b45309; }
     .status-badge.validated { background: #fce7f3; color: #9d174d; }
     .status-badge.forwarded { background: #eff6ff; color: #1d4ed8; }
     .status-badge.approved { background: #f0fdf4; color: #15803d; }
@@ -160,6 +160,9 @@
           <input id="regSearchInput" type="text" />
           <select id="regDeptSelect" style="display: none;"></select>
         </div>
+        <div>
+          <button id="filterNeedActionBtn" class="btn type-btn">⚡ Need Action</button>
+        </div>
         <div class="table-wrap">
           <table>
             <thead><tr><th>ID</th><th>Subject</th><th>Dept</th><th>Type</th><th>Amount</th><th>Date</th><th>Current Stage</th><th>Status</th><th>Action</th></tr></thead>
@@ -193,11 +196,10 @@
       <a id="viewLink" href="#" target="_blank" class="btn mutedBtn">View Signed Softcopy</a>
       <div style="margin-top: 10px">
         <label for="mSigned">Upload new signed copy (PDF):</label>
-        <input type="file" id="mSigned" accept="application/pdf" style="width: 100%; margin-top: 6px"/>
+        <input type="file"  id="mSigned" name="signedFile" accept="application/pdf" style="width: 100%; margin-top: 6px"/>
       </div>
       <div class="actions">
-        <button class="btn approve" id="mApproveBtn" onclick="doApprove()">Approve</button>
-        <button class="btn forward" id="mForwardBtn" onclick="doForward()">Forward to VC</button>
+        <button class="btn forward" id="mForwardBtn" onclick="doForward()">Approve & Forward to VC</button>
         <button class="btn reject" id="mRejectBtn" onclick="doReject()">Reject</button>
       </div>
     </div>
@@ -247,9 +249,12 @@
       document.getElementById("mSubject").textContent = letter.subject;
       document.getElementById("mId").textContent = letter.id;
       document.getElementById("mDate").textContent = letter.date;
-      document.getElementById("mType").textContent = letter.type;
+      // Use classification field from agent, fallback to type
+      document.getElementById("mType").textContent = letter.classification || letter.type;
+      
       const viewLink = document.getElementById("viewLink");
-      const signedPath = letter.signedFilePath || letter.filePath;
+      // Check all possible *previous* signed paths
+      const signedPath = letter.deanSignedPath || letter.signedFilePath || letter.filePath;
       if(signedPath) {
         viewLink.href = `http://localhost:3000/${signedPath.replace(/\\/g, '/')}`;
         viewLink.style.display = 'inline-block';
@@ -258,30 +263,21 @@
       }
       setPipeline(letter);
       
-      const approveBtn = document.getElementById('mApproveBtn');
       const forwardBtn = document.getElementById('mForwardBtn');
       const rejectBtn = document.getElementById('mRejectBtn');
       const actions = document.querySelector('#letterModal .actions');
 
-      if (letter.stage === 'Registrar') {
-          if (letter.status === 'Pending') {
-              actions.style.display = 'flex';
-              approveBtn.disabled = false;
-              forwardBtn.disabled = true; // Forward is disabled until approved
-              rejectBtn.disabled = false;
-              approveBtn.textContent = 'Approve';
-          } else if (letter.status === 'Validated') {
-              actions.style.display = 'flex';
-              approveBtn.disabled = true;
-              approveBtn.textContent = 'Approved ✔';
-              forwardBtn.disabled = false; // Forward is now enabled
-              rejectBtn.disabled = false;
-          } else {
-              actions.style.display = 'none'; // Letter is already processed
-          }
+      // --- LOGIC MODIFIED ---
+      // Only show actions if it's the Registrar's turn and the letter is Pending/Overdue
+      if (letter.stage === 'Registrar' && (letter.status === 'Pending' || letter.status === 'Overdue')) {
+          actions.style.display = 'flex';
+          forwardBtn.disabled = false;
+          rejectBtn.disabled = false;
       } else {
-          actions.style.display = 'none'; // Not the Registrar's turn
+          // Letter is already processed or not the Registrar's turn
+          actions.style.display = 'none'; 
       }
+      // --- END MODIFIED LOGIC ---
 
       document.getElementById("letterModal").setAttribute("aria-hidden", "false");
     }
@@ -290,18 +286,27 @@
 
     function setPipeline(letter) {
       const pipelineContainer = document.getElementById("pipeline");
-      const stages = letter.type === "Payment" ? ["Clerk", "Dean", "Registrar", "VC", "Accounts"] : ["Clerk", "Dean", "Registrar", "VC"];
+      // Use classification field from agent, fallback to type
+      const stages = (letter.classification || letter.type) === "Payment" ? ["Clerk", "Dean", "Registrar", "VC", "Accounts"] : ["Clerk", "Dean", "Registrar", "VC"];
       pipelineContainer.innerHTML = "";
       let currentStageIndex = stages.indexOf(letter.stage);
-      if(letter.status === 'Approved') currentStageIndex = 100;
+      
+      if(letter.status === 'Approved') currentStageIndex = 100; // All complete
+      if(letter.status === 'Rejected') currentStageIndex = -1; // Reset
+      
       stages.forEach((stage, index) => {
         const step = document.createElement("div");
         step.className = "step"; step.textContent = stage;
         if (index <= currentStageIndex) step.classList.add("active");
+        // Special case to show *who* rejected it
+        if (letter.status === 'Rejected' && stages[index] === letter.stage) {
+            step.classList.add("active"); // Or a different 'rejected' class
+        }
         pipelineContainer.appendChild(step);
       });
     }
     
+    // --- FUNCTION MODIFIED ---
     async function handleAction(action) {
         const token = localStorage.getItem('authToken');
         if (!activeLetter || !token) return;
@@ -309,36 +314,37 @@
         const signedFile = document.getElementById("mSigned").files[0];
         
         if (action === 'reject' && !remarks.trim()) { alert("Please provide remarks for rejection."); return; }
-        if ((action === 'approve' || action === 'forward') && !signedFile) { alert("Please upload your signed soft copy to proceed."); return; }
+        // 'forward' is the new 'approve' action
+        if (action === 'forward' && !signedFile) { alert("Please upload your signed soft copy to proceed."); return; }
 
         const formData = new FormData();
         formData.append('action', action);
         formData.append('remarks', remarks);
+        // if (signedFile) formData.append('registrarSignedPath', signedFile); // Use the correct field name if backend supports it, else 'signedFile'
         if (signedFile) formData.append('signedFile', signedFile);
 
+
         try {
-            const response = await fetch(`http://localhost:3000/api/letters/${activeLetter.id}`, {
+            // --- FIX 1: Correct Endpoint ---
+            const response = await fetch(`http://localhost:3000/api/${activeLetter.id}`, {
                 method: 'PUT', headers: { 'Authorization': `Bearer ${token}` }, body: formData
             });
-            if (!response.ok) throw new Error(`Action ${action} failed`);
             
             const data = await response.json();
-
-            if (action === 'approve') {
-                const index = registrarLettersData.findIndex(l => l.id === data.letter.id);
-                if (index !== -1) registrarLettersData[index] = data.letter;
-                openLetter(data.letter);
-                performRegistrarSearch(); // Re-filter and re-populate
-            } else {
-                alert(`Letter successfully processed!`);
-                closeModal();
-                await fetchLetters();
-            }
+            if (!response.ok) throw new Error(data.message || `Action ${action} failed`);
+            
+            // --- FIX 2: Correct Server Response Handling ---
+            // Backend returns a message, not the letter object.
+            // So, just show the message, close the modal, and refresh the list.
+            alert(data.message || `Letter successfully processed!`);
+            closeModal();
+            await fetchLetters();
+            
         } catch (error) { alert(`Error: ${error.message}`); console.error(error); }
     }
 
-    function doApprove() { handleAction('approve'); }
-    function doForward() { handleAction('forward'); }
+    // function doApprove() { handleAction('approve'); } // This button is hidden now
+    function doForward() { handleAction('forward'); } // This is the main approval action
     function doReject() { handleAction('reject'); }
     
     function populateRegistrarTable(data, page = 1) {
@@ -352,17 +358,34 @@
         noResultsRow.style.display = data.length === 0 ? 'table-row' : 'none';
         paginatedData.forEach(letter => {
             const row = tableBody.insertRow();
-            let statusText = letter.status;
-            if (letter.status === 'Pending' && letter.stage !== 'Registrar') {
+            let statusText = letter.status.replace('_', ' ');
+            if ((letter.status === 'Pending' || letter.status === 'Overdue') && letter.stage !== 'Registrar') {
                 statusText = `Pending @ ${letter.stage}`;
             } else if (letter.status === 'Approved') {
-                statusText = `Approved by ${letter.stage}`;
-            } else if (letter.status === 'Validated') {
-                statusText = `Approved by Registrar`;
+                statusText = `Approved`;
+            } else if (letter.status === 'ActionTaken') {
+                 statusText = `Processing...`;
             }
 
+            // --- PRIORITY DISPLAY LOGIC (Added) ---
+            let priorityHtml = '';
+            const score = letter.priorityScore || 0; // Get the score (e.g., 80)
+
+            if (score >= 70) { // High Priority
+                priorityHtml = `<span style="font-weight: 700; font-size: 12px; color: var(--danger); display: block; margin-top: 2px;">🔥 High Priority</span>`;
+            } else if (score >= 50) { // Medium Priority
+                priorityHtml = `<span style="font-weight: 600; font-size: 12px; color: var(--warn); display: block; margin-top: 2px;">⚠️ Medium Priority</span>`;
+            } else { // Normal Priority
+                priorityHtml = `<span style="font-weight: 600; font-size: 12px; color: var(--muted); display: block; margin-top: 2px;">Normal Priority</span>`;
+            }
+            // --- End Priority Logic ---
+
             row.innerHTML = `
-                <td>${letter.id}</td><td>${letter.subject}</td><td>${letter.dept}</td><td>${letter.type}</td>
+                <td>
+                    <strong>${letter.id}</strong>
+                    ${priorityHtml} </td>
+                <td>${letter.subject}</td><td>${letter.dept}</td>
+                <td>${letter.classification || letter.type}</td>
                 <td>${letter.amount > 0 ? `₹${letter.amount.toLocaleString('en-IN')}` : 'N/A'}</td>
                 <td>${letter.date}</td>
                 <td><strong style="color: var(--primary);">${letter.stage}</strong></td>
@@ -393,18 +416,27 @@
         paginationContainer.appendChild(prevButton);
 
         for (let i = 1; i <= pageCount; i++) {
-            const pageButton = document.createElement('button');
-            pageButton.classList.add('page-btn');
-            pageButton.textContent = i;
-            if (i === currentPage) {
-                pageButton.classList.add('active');
+             // Simple pagination: show first, last, current, and neighbors
+            if (i === 1 || i === pageCount || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                const pageButton = document.createElement('button');
+                pageButton.classList.add('page-btn');
+                pageButton.textContent = i;
+                if (i === currentPage) {
+                    pageButton.classList.add('active');
+                }
+                pageButton.addEventListener('click', () => {
+                    currentPage = i;
+                    populateRegistrarTable(data, currentPage);
+                    setupPagination(data);
+                });
+                paginationContainer.appendChild(pageButton);
+            } else if (i === currentPage - 2 || i === currentPage + 2) {
+                const dots = document.createElement('span');
+                dots.textContent = '...';
+                dots.style.padding = '0 8px';
+                dots.style.color = 'var(--muted)';
+                paginationContainer.appendChild(dots);
             }
-            pageButton.addEventListener('click', () => {
-                currentPage = i;
-                populateRegistrarTable(data, currentPage);
-                setupPagination(data);
-            });
-            paginationContainer.appendChild(pageButton);
         }
 
         const nextButton = document.createElement('button');
@@ -424,7 +456,8 @@
     function performRegistrarSearch() {
         let filteredByType = registrarLettersData;
         if (currentLetterTypeFilter !== 'All') {
-            filteredByType = registrarLettersData.filter(letter => letter.type === currentLetterTypeFilter);
+            // Use classification field from agent, fallback to type
+            filteredByType = registrarLettersData.filter(letter => (letter.classification || letter.type) === currentLetterTypeFilter);
         }
         const type = document.getElementById('regSearchType').value;
         let query;
@@ -457,6 +490,38 @@
         searchInput.value = ''; deptSelect.value = '';
         performRegistrarSearch();
     }
+    // --- ADD THIS "NEED ACTION" LISTENER ---
+      let isNeedActionFilterActive = false;
+      document.getElementById('filterNeedActionBtn').addEventListener('click', () => {
+          isNeedActionFilterActive = !isNeedActionFilterActive; // Toggle state
+          const btn = document.getElementById('filterNeedActionBtn');
+          btn.classList.toggle('active', isNeedActionFilterActive); // Toggle visual style
+          
+          if (isNeedActionFilterActive) {
+            btn.innerHTML = '📋 Show All';
+          } else {
+            btn.innerHTML = '⚡ Need Action';
+          }
+
+          // Re-filter the data
+          if (isNeedActionFilterActive) {
+            const needActionData = registrarLettersData.filter(l => 
+                l.stage === 'Registrar' && (l.status === 'Pending' || l.status === 'Overdue')
+            );
+            currentFilteredData = needActionData;
+          } else {
+            // This will re-run the original search/filter
+            performRegistrarSearch();
+            return; // performRegistrarSearch already repopulates
+          }
+          
+          currentPage = 1;
+          populateRegistrarTable(currentFilteredData, currentPage);
+          setupPagination(currentFilteredData);
+      });
+      // --- END OF NEW LISTENER ---
+
+      populateDeptDropdown();
     function populateDeptDropdown() {
         const deptSelect = document.getElementById('regDeptSelect');
         deptSelect.innerHTML = '<option value="">All Departments</option>';
@@ -467,29 +532,36 @@
         });
     }
 
+    // --- FUNCTION MODIFIED ---
     async function fetchLetters() {
         const token = localStorage.getItem('authToken');
         if (!token) { logout(); return; }
         try {
-            const response = await fetch('http://localhost:3000/api/letters', {
+            // --- FIX 3: Correct Endpoint ---
+            const response = await fetch('http://localhost:3000/api', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!response.ok) { if (response.status === 401 || response.status === 403) logout(); return; }
             
             const letters = await response.json();
+            // Server.js already filters for the Registrar, so no client-side filtering needed
             registrarLettersData = letters;
             
-            const pendingCount = registrarLettersData.filter(l => l.stage === 'Registrar' && (l.status === 'Pending' || l.status === 'Validated')).length;
+            const pendingCount = registrarLettersData.filter(l => l.stage === 'Registrar' && (l.status === 'Pending' || l.status === 'Overdue')).length;
             document.getElementById('pendingCount').textContent = pendingCount;
             
             const activityContainer = document.getElementById("recentActivity");
             activityContainer.innerHTML = '';
-            letters.slice().reverse().slice(0, 3).forEach(letter => {
+            // Show recent letters *that arrived at the Registrar's desk*
+            registrarLettersData.filter(l => l.stage === 'Registrar').slice(0, 3).forEach(letter => {
                 const card = document.createElement("div");
                 card.className = "activity-card";
                 card.innerHTML = `<div class="activity-icon arrived"><i class="fas fa-arrow-down"></i></div><div class="activity-details"><p class="subject">${letter.subject}</p><p class="meta">From Dean's Office - ${letter.date}</p></div>`;
                 activityContainer.appendChild(card);
             });
+            if (activityContainer.innerHTML === '') {
+                 activityContainer.innerHTML = '<p style="color: var(--muted); font-style: italic;">No recent activity.</p>';
+            }
 
             performRegistrarSearch();
 

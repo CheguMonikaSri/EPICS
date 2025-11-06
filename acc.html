@@ -94,7 +94,7 @@
     tbody tr:hover { background: #f1f5f9; }
     #noResults td { text-align: center; padding: 20px; font-style: italic; color: var(--muted); }
     .status-badge { padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; text-transform: capitalize; }
-    .status-badge.pending { background: #fffbeb; color: #b45309; }
+    .status-badge.pending, .status-badge.overdue { background: #fffbeb; color: #b45309; }
     .status-badge.forwarded { background: #eff6ff; color: #1d4ed8; }
     .status-badge.approved { background: #f0fdf4; color: #15803d; }
     .status-badge.rejected { background: #fef2f2; color: #b91c1c; }
@@ -245,8 +245,10 @@
       document.getElementById("mId").textContent = letter.id;
       document.getElementById("mDate").textContent = letter.date;
       document.getElementById("mAmount").textContent = `₹${letter.amount.toLocaleString('en-IN')}`;
+      
       const viewLink = document.getElementById("viewLink");
-      const signedPath = letter.signedFilePath || letter.filePath;
+      // Check all possible *previous* signed paths
+      const signedPath = letter.signedFilePath || letter.registrarSignedPath || letter.deanSignedPath || letter.filePath;
       if(signedPath) {
         viewLink.href = `http://localhost:3000/${signedPath.replace(/\\/g, '/')}`;
         viewLink.style.display = 'inline-block';
@@ -256,7 +258,8 @@
       setPipeline(letter);
       
       const actions = document.querySelector('#letterModal .actions');
-      if (letter.stage === 'Accounts' && letter.status === 'Pending') {
+      // Only show actions if it's the Account's turn and the letter is Pending/Overdue
+      if (letter.stage === 'Accounts' && (letter.status === 'Pending' || letter.status === 'Overdue')) {
         actions.style.display = 'flex';
       } else {
         actions.style.display = 'none';
@@ -269,6 +272,7 @@
     
     function setPipeline(letter) {
         const pipelineContainer = document.getElementById("pipeline");
+        // Accounts only deals with Payment, so we can hardcode the pipeline
         const stages = ["Clerk", "Dean", "Registrar", "VC", "Accounts"];
         let currentStageIndex = stages.indexOf(letter.stage);
         
@@ -277,7 +281,7 @@
             let iconContent = index + 1;
 
             if (letter.status === 'Approved') {
-                statusClass = 'completed';
+                statusClass = 'completed'; // Mark all as completed
                 iconContent = '&#10003;';
             } else if (letter.status === 'Rejected' && index === currentStageIndex) {
                 statusClass = 'rejected';
@@ -286,12 +290,13 @@
                 statusClass = 'completed';
                 iconContent = '&#10003;';
             } else if (index === currentStageIndex) {
-                statusClass = 'current';
+                statusClass = 'current'; // This is the active step
             }
             return `<li class="pipeline-step ${statusClass}"><div class="step-icon">${iconContent}</div><div class="step-label">${stageName}</div></li>`;
         }).join('');
     }
     
+    // --- FUNCTION MODIFIED ---
     async function handleAction(action) {
         const token = localStorage.getItem('authToken');
         if (!activeLetter || !token) return;
@@ -301,27 +306,32 @@
         const chequeFile = document.getElementById("mCheque").files[0];
         
         if (action === 'reject' && !remarks.trim()) { alert("Please provide remarks for rejection."); return; }
-        if (action === 'approve' && !signedFile) { alert("Please upload your signed soft copy to proceed."); return; }
+        // 'approve' is the final step, signature is good practice
+        if (action === 'approve' && !signedFile) { alert("Please upload a final signed/stamped copy to proceed."); return; }
 
         const formData = new FormData();
         formData.append('action', action);
         formData.append('remarks', remarks);
         if (signedFile) formData.append('signedFile', signedFile);
-        if (chequeFile) formData.append('chequeFile', chequeFile);
+        if (chequeFile) formData.append('chequeFile', chequeFile); // Server.js accepts this, even if it doesn't save it yet
 
         try {
-            const response = await fetch(`http://localhost:3000/api/letters/${activeLetter.id}`, {
+            // --- FIX 1: Correct Endpoint ---
+            const response = await fetch(`http://localhost:3000/api/${activeLetter.id}`, {
                 method: 'PUT', headers: { 'Authorization': `Bearer ${token}` }, body: formData
             });
-            if (!response.ok) throw new Error(`Action ${action} failed`);
             
-            alert(`Letter successfully processed!`);
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || `Action ${action} failed`);
+            
+            // --- This logic was already correct! ---
+            alert(data.message || `Letter successfully processed!`);
             closeModal();
             await fetchLetters();
         } catch (error) { alert(`Error: ${error.message}`); console.error(error); }
     }
 
-    function doApprove() { handleAction('approve'); }
+    function doApprove() { handleAction('approve'); } // This is the "Process Payment" action
     function doReject() { handleAction('reject'); }
     
     function populateAccTable(data, page = 1) {
@@ -339,6 +349,8 @@
             let statusText = letter.status;
             if (letter.status === 'Approved') {
                 statusText = 'Payment Processed';
+            } else if (letter.status === 'ActionTaken') {
+                 statusText = `Processing...`;
             }
 
             row.innerHTML = `
@@ -372,19 +384,28 @@
       paginationContainer.appendChild(prevButton);
 
       for (let i = 1; i <= pageCount; i++) {
-          const pageButton = document.createElement('button');
-          pageButton.classList.add('page-btn');
-          pageButton.textContent = i;
-          if (i === currentPage) {
-              pageButton.classList.add('active');
-          }
-          pageButton.addEventListener('click', () => {
-              currentPage = i;
-              populateAccTable(data, currentPage);
-              setupPagination(data);
-          });
-          paginationContainer.appendChild(pageButton);
-      }
+            // Simple pagination: show first, last, current, and neighbors
+            if (i === 1 || i === pageCount || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                const pageButton = document.createElement('button');
+                pageButton.classList.add('page-btn');
+                pageButton.textContent = i;
+                if (i === currentPage) {
+                    pageButton.classList.add('active');
+                }
+                pageButton.addEventListener('click', () => {
+                    currentPage = i;
+                    populateAccTable(data, currentPage);
+                    setupPagination(data);
+                });
+                paginationContainer.appendChild(pageButton);
+            } else if (i === currentPage - 2 || i === currentPage + 2) {
+                const dots = document.createElement('span');
+                dots.textContent = '...';
+                dots.style.padding = '0 8px';
+                dots.style.color = 'var(--muted)';
+                paginationContainer.appendChild(dots);
+            }
+        }
 
       const nextButton = document.createElement('button');
       nextButton.classList.add('page-btn');
@@ -408,6 +429,7 @@
         } else {
             query = document.getElementById('accSearchInput').value.toLowerCase();
         }
+        // Search the data store
         currentFilteredData = accLettersData.filter(letter => {
             if (query === '') return true;
             let valueToSearch = (letter[type] || '').toString().toLowerCase();
@@ -442,27 +464,37 @@
         });
     }
 
+    // --- FUNCTION MODIFIED ---
     async function fetchLetters() {
         const token = localStorage.getItem('authToken');
         if (!token) { logout(); return; }
         try {
-            const response = await fetch('http://localhost:3000/api/letters', { headers: { 'Authorization': `Bearer ${token}` } });
+            // --- FIX 2: Correct Endpoint ---
+            const response = await fetch('http://localhost:3000/api', { headers: { 'Authorization': `Bearer ${token}` } });
             if (!response.ok) { if (response.status === 401 || response.status === 403) logout(); return; }
             
             const allLetters = await response.json();
-            accLettersData = allLetters.filter(l => l.type === 'Payment' && l.stage === 'Accounts');
             
-            const pendingCount = accLettersData.filter(l => l.status === 'Pending').length;
+            // --- FIX 3: Removed Redundant Filter ---
+            // Server.js (line 94) already filters for 'Accounts' and 'Payment'
+            accLettersData = allLetters;
+            
+            const pendingCount = accLettersData.filter(l => l.status === 'Pending' || l.status === 'Overdue').length;
             document.getElementById('pendingCount').textContent = pendingCount;
             
             const activityContainer = document.getElementById("recentActivity");
             activityContainer.innerHTML = '';
-            accLettersData.slice().reverse().slice(0, 3).forEach(letter => {
+            // Show recent letters that arrived at the Accounts desk
+            accLettersData.slice(0, 3).forEach(letter => {
                 const card = document.createElement("div");
                 card.className = "activity-card";
                 card.innerHTML = `<div class="activity-icon arrived"><i class="fas fa-arrow-down"></i></div><div class="activity-details"><p class="subject">${letter.subject}</p><p class="meta">From VC's Office - ${letter.date}</p></div>`;
                 activityContainer.appendChild(card);
             });
+             if (activityContainer.innerHTML === '') {
+                 activityContainer.innerHTML = '<p style="color: var(--muted); font-style: italic;">No recent activity.</p>';
+            }
+
             performAccSearch();
         } catch (error) { console.error('Failed to fetch letters:', error); }
     }

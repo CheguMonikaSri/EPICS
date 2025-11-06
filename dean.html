@@ -8,7 +8,14 @@
   <style>
     :root { --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9; --text: #0f172a; --muted: #64748b; --border: #e5e7eb; --border-strong: #cbd5e1; --primary: #2563eb; --primary-hover: #1d4ed8; --ring: #3b82f6; --success: #16a34a; --danger: #dc2626; --warn: #f59e0b; --radius: 14px; --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.06); --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.25); }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    /* body { margin: 0; font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--text); } */
+    body {
+    margin: 0;
+    font-family: Inter, system-ui, sans-serif;
+    /* New subtle gradient background */
+    background: linear-gradient(135deg, #f5f7fa 0%, #eef2ff 100%);
+    color: var(--text);
+}
     .visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     .app { display: flex; min-height: 100vh; }
     .sidebar { width: 280px; flex: 0 0 280px; background: #0b1220; color: #e5e7eb; display: flex; flex-direction: column; padding: 24px 16px; gap: 24px; position: sticky; top: 0; height: 100vh; }
@@ -25,7 +32,13 @@
     h1, h2 { margin: 0 0 18px; font-size: 32px; line-height: 1.2; }
     h2 { font-size: 24px; }
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 16px; }
+    /* .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 16px; } */
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 16px; transition: all 0.2s ease-out; }
+    .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
+}
     .stat-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--warn); background: #fffbeb; }
     .stat-info { display: flex; flex-direction: column; }
     .stat-title { font-weight: 600; color: var(--muted); font-size: 14px; }
@@ -33,9 +46,18 @@
     .departments { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin: 18px 0 8px; }
     .dept-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 16px; text-align: center; font-weight: 800; cursor: pointer; box-shadow: var(--shadow); transition: all 0.2s ease-in-out; display: flex; flex-direction: column; align-items: center; gap: 8px; }
     .dept-card i { font-size: 24px; color: var(--primary); }
-    .dept-card:hover { transform: translateY(-4px); border-color: var(--border-strong); background: #eef2ff; box-shadow: 0 0 20px 5px rgba(37, 99, 235, 0.15); }
+    /* .dept-card:hover { transform: translateY(-4px); border-color: var(--border-strong); background: #eef2ff; box-shadow: 0 0 20px 5px rgba(37, 99, 235, 0.15); } */
+     .dept-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
+    background: #eef2ff; /* Kept this, it's a nice effect */
+}
     .activity-section { margin-top: 32px; }
-    .activity-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+    /* .activity-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; } */
+    .activity-card {
+    transition: transform 0.2s, background 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
     .activity-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; }
     .activity-icon.arrived { background: var(--primary); }
     .activity-icon.approved { background: var(--success); }
@@ -90,6 +112,49 @@
     .page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
     .page-btn:disabled { background: var(--surface-2); color: var(--muted); cursor: not-allowed; }
     #rowsPerPageSelect { padding: 8px; border-radius: 8px; border: 1px solid var(--border); font-weight: 600; }
+    .priority {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.priority.high { background-color: #ff4d4d; color: white; }
+.priority.medium { background-color: #ffcc00; color: black; }
+.priority.normal { background-color: #cccccc; color: black; }
+
+  /* --- ADD THESE STYLES --- */
+    
+    /* 1. Animation for switching views */
+    .view-fade-in {
+        animation: fadeIn 0.4s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .activity-card:hover {
+    transform: translateX(4px);
+    background: var(--surface-2);
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary);
+}
+    .activity-card {
+        transition: transform 0.2s, background 0.2s;
+    }
+    .status-badge.rejected { background: #fef2f2; color: #b91c1c; }
+
+    .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        box-shadow: var(--shadow);
+        margin-bottom: 24px;
+    }
+
   </style>
 </head>
 <body>
@@ -103,7 +168,7 @@
       </ul>
     </aside>
     <main class="main">
-      <div id="dashboardView">
+      <div id="dashboardView" class="view-fade-in">
         <h1>Dean's Dashboard</h1>
         <section><h2 class="visually-hidden">Key Statistics</h2><div class="stats-grid"><div class="stat-card"><div class="stat-icon"><i class="fas fa-clock"></i></div><div class="stat-info"><span class="stat-title">Pending Approvals</span><span class="stat-count" id="pendingCount">0</span></div></div></div></section>
         <section>
@@ -122,13 +187,18 @@
         </section>
         <section class="activity-section"><h2>Recent Activity</h2><div id="recentActivity"></div></section>
       </div>
-      <div id="lettersView" style="display: none">
-        <h1>View Letters <button id="refreshBtn" class="btn" title="Refresh Letters" style="padding: 6px 10px; font-size: 14px; vertical-align: middle; margin-left: 10px;"><i class="fas fa-sync-alt"></i></button></h1>
+        <div id="lettersView" style="display: none" class="view-fade-in card">
+            <h1>View Letters <button id="refreshBtn" class="btn" title="Refresh Letters" style="padding: 6px 10px; font-size: 14px; vertical-align: middle; margin-left: 10px;"><i class="fas fa-sync-alt"></i></button></h1>
         <div class="type-filter" id="typeFilter"><button class="type-btn active" data-type="All">All</button><button class="type-btn" data-type="Payment">Payment</button><button class="type-btn" data-type="Permission">Permission</button></div>
         <div class="search-bar">
           <select id="deanSearchType"><option value="subject">Subject</option><option value="id">ID</option><option value="date">Date</option><option value="dept">Department</option><option value="amount">Amount</option></select>
           <input id="deanSearchInput" type="text" /><select id="deanDeptSelect" style="display: none;"></select>
         </div>
+        <div style="margin-bottom: 10px;">
+<button id="filterNeedActionBtn" class="btn type-btn">⚡ Need Action</button>
+</div>
+
+
         <div class="table-wrap">
           <table>
             <thead><tr><th>ID</th><th>Subject</th><th>Dept</th><th>Type</th><th>Amount</th><th>Date</th><th>Current Stage</th><th>Status</th><th>Action</th></tr></thead>
@@ -180,16 +250,48 @@
     let activeLetter = null;
     let currentPage = 1;
     let rowsPerPage = 20;
-
+    let isNeedActionFilterActive = false; // <-- ADD THIS
     function logout() { localStorage.removeItem('authToken'); window.location.href = './login.html'; }
+
+    // function showView(viewName) {
+    //   document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
+    //   const activeLink = document.getElementById(`nav${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`);
+    //   if(activeLink) activeLink.classList.add("active");
+    //   document.getElementById("dashboardView").style.display = viewName === 'dashboard' ? 'block' : 'none';
+    //   document.getElementById("lettersView").style.display = viewName === 'letters' ? 'block' : 'none';
+    //   if (viewName === 'letters') {
+    //       document.querySelector('#typeFilter .type-btn.active').classList.remove('active');
+    //       document.querySelector('#typeFilter .type-btn[data-type="All"]').classList.add('active');
+    //       currentLetterTypeFilter = 'All';
+    //       performDeanSearch();
+    //   }
+    // }
 
     function showView(viewName) {
       document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
       const activeLink = document.getElementById(`nav${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`);
       if(activeLink) activeLink.classList.add("active");
-      document.getElementById("dashboardView").style.display = viewName === 'dashboard' ? 'block' : 'none';
-      document.getElementById("lettersView").style.display = viewName === 'letters' ? 'block' : 'none';
-      if (viewName === 'letters') {
+      
+      const dashView = document.getElementById("dashboardView");
+      const lettersView = document.getElementById("lettersView");
+
+      // Hide both first
+      dashView.style.display = 'none';
+      lettersView.style.display = 'none';
+
+      // Show the one we want and re-trigger animation
+      if (viewName === 'dashboard') {
+          dashView.style.display = 'block';
+          dashView.classList.remove('view-fade-in'); // Reset animation
+          void dashView.offsetWidth; // Trigger reflow
+          dashView.classList.add('view-fade-in'); // Add animation
+      } else if (viewName === 'letters') {
+          lettersView.style.display = 'block';
+          lettersView.classList.remove('view-fade-in'); // Reset animation
+          void lettersView.offsetWidth; // Trigger reflow
+          lettersView.classList.add('view-fade-in'); // Add animation
+
+          // Reset filters when clicking the tab
           document.querySelector('#typeFilter .type-btn.active').classList.remove('active');
           document.querySelector('#typeFilter .type-btn[data-type="All"]').classList.add('active');
           currentLetterTypeFilter = 'All';
@@ -224,25 +326,36 @@
       const rejectBtn = document.getElementById('mRejectBtn');
       const actions = document.querySelector('#letterModal .actions');
 
-      if (letter.stage === 'Dean') {
-          if (letter.status === 'Pending') {
-              actions.style.display = 'flex';
-              approveBtn.disabled = false;
-              forwardBtn.disabled = true;
-              rejectBtn.disabled = false;
-              approveBtn.textContent = 'Approve';
-          } else if (letter.status === 'Validated') {
-              actions.style.display = 'flex';
-              approveBtn.disabled = true;
-              approveBtn.textContent = 'Approved ✔';
-              forwardBtn.disabled = false;
-              rejectBtn.disabled = false;
-          } else {
-              actions.style.display = 'none';
-          }
+      // This frontend logic for 'Approve' vs 'Forward' is fine.
+      // The backend server.js will just receive the 'action' string ('approve' or 'forward')
+      // and set the status to 'ActionTaken' for the Python agent to handle.
+      
+      // *** START MODIFIED LOGIC (from original) ***
+      // We assume if the letter is at the Dean stage and status is 'Pending', 
+      // the Dean's only actions are to 'approve' (which the backend will process) or 'reject'.
+      // The original 'Validated' status check seemed to be part of a different workflow.
+      // This simplifies it to match your backend: Dean takes an action, or they don't.
+      
+      if (letter.stage === 'Dean' && (letter.status === 'Pending' || letter.status === 'Overdue')) {
+          actions.style.display = 'flex';
+          
+          // Let's use a single "Approve/Forward" button to avoid confusion.
+          // The backend just cares about the 'action' string.
+          // We can send 'forward' as the action, which the backend router understands.
+          approveBtn.style.display = 'none'; // Hide the original 'Approve'
+          
+          forwardBtn.style.display = 'inline-block';
+          forwardBtn.disabled = false;
+          forwardBtn.textContent = 'Approve & Forward'; // Make button text clearer
+
+          rejectBtn.style.display = 'inline-block';
+          rejectBtn.disabled = false;
       } else {
+          // If status is not Pending/Overdue (e.g., 'ActionTaken', 'Approved', 'Rejected'), hide actions.
           actions.style.display = 'none';
       }
+      // *** END MODIFIED LOGIC ***
+      
       document.getElementById("letterModal").setAttribute("aria-hidden", "false");
     }
 
@@ -250,14 +363,21 @@
 
     function setPipeline(letter) {
       const pipelineContainer = document.getElementById("pipeline");
-      const stages = letter.type === "Payment" ? ["Clerk", "Dean", "Registrar", "VC", "Accounts"] : ["Clerk", "Dean", "Registrar", "VC"];
+      // Use 'classification' field from DB which is set by the LCA agent
+      const stages = letter.classification === "Payment" ? ["Clerk", "Dean", "Registrar", "VC", "Accounts"] : ["Clerk", "Dean", "Registrar", "VC"];
       pipelineContainer.innerHTML = "";
       let currentStageIndex = stages.indexOf(letter.stage);
       if(letter.status === 'Approved') currentStageIndex = 100; // Mark all as complete
+      if(letter.status === 'Rejected') currentStageIndex = -1; // Don't mark any as active
+      
       stages.forEach((stage, index) => {
         const step = document.createElement("div");
         step.className = "step"; step.textContent = stage;
         if (index <= currentStageIndex) step.classList.add("active");
+        if (letter.status === 'Rejected' && stage === letter.stage) {
+            // Special case to show *who* rejected it
+             step.classList.add("active"); // Or a different 'rejected' class
+        }
         pipelineContainer.appendChild(step);
       });
     }
@@ -268,57 +388,159 @@
         const remarks = document.getElementById("mRemarks").value;
         const signedFile = document.getElementById("mSigned").files[0];
         if (action === 'reject' && !remarks.trim()) { alert("Please provide remarks for rejection."); return; }
-        if ((action === 'approve' || action === 'forward') && !signedFile) { alert("Please upload the signed soft copy to proceed."); return; }
+        if ((action === 'forward' || action === 'approve') && !signedFile) { alert("Please upload the signed soft copy to proceed."); return; }
+        
         const formData = new FormData();
         formData.append('action', action);
         formData.append('remarks', remarks);
         if (signedFile) formData.append('signedFile', signedFile);
+        
         try {
-            const response = await fetch(`http://localhost:3000/api/letters/${activeLetter.id}`, {
-                method: 'PUT', headers: { 'Authorization': `Bearer ${token}` }, body: formData
+            // --- FIX 1 ---
+            // Changed URL from /api/letters/:id to /api/:id
+            const response = await fetch(`http://localhost:3000/api/${activeLetter.id}`, {
+                method: 'PUT', 
+                headers: { 'Authorization': `Bearer ${token}` }, 
+                body: formData
             });
-            if (!response.ok) throw new Error(`Action ${action} failed`);
-            const data = await response.json();
-            if (action === 'approve') {
-                const index = deanLettersData.findIndex(l => l.id === data.letter.id);
-                if (index !== -1) deanLettersData[index] = data.letter;
-                openLetter(data.letter);
-                performDeanSearch();
-            } else {
-                alert(`Letter successfully processed!`);
-                closeModal();
-                await fetchLetters();
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.message || `Action ${action} failed`);
             }
-        } catch (error) { alert(`Error: ${error.message}`); console.error(error); }
+            
+            // --- FIX 2 ---
+            // Backend returns a simple message, not the full letter object.
+            // So, we just show the message, close the modal, and refresh the list.
+            const data = await response.json();
+            alert(data.message || 'Action processed successfully!');
+            closeModal();
+            await fetchLetters(); // Refresh the main list
+            
+        } catch (error) { 
+            alert(`Error: ${error.message}`); 
+            console.error(error); 
+        }
     }
 
-    function doApprove() { handleAction('approve'); }
-    function doForward() { handleAction('forward'); }
+    // Renamed doApprove to 'doForward' since that's the action we send
+    function doApprove() { handleAction('approve'); } // This will still work, backend logs it
+    function doForward() { handleAction('forward'); } // This is clearer
     function doReject() { handleAction('reject'); }
     
+
+    // function populateDeanTable(data, page = 1) {
+    //     const tableBody = document.getElementById('deanLettersBody');
+    //     const noResultsRow = document.getElementById('noResults');
+    //     tableBody.innerHTML = '';
+
+    //     // --- 1. SORT BY DATE: NEWEST FIRST ---
+    //     data.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    //     const startIndex = (page - 1) * rowsPerPage;
+    //     const paginatedData = data.slice(startIndex, startIndex + rowsPerPage);
+
+    //     noResultsRow.style.display = data.length === 0 ? 'table-row' : 'none';
+
+    //     paginatedData.forEach(letter => {
+    //         const row = tableBody.insertRow();
+    //         let statusText = letter.status;
+
+    //         // --- Improved Status Text ---
+    //         if (letter.status === 'Pending' && letter.stage !== 'Dean') {
+    //             statusText = `Pending @ ${letter.stage}`;
+    //         } else if (letter.status === 'Approved') {
+    //             statusText = `Approved`;
+    //         } else if (letter.status === 'ActionTaken') {
+    //             statusText = `Processing...`;
+    //         } else if (letter.status === 'ML_DRAFTED' || letter.status === 'ML_OCR' || letter.status === 'Submitted') {
+    //             statusText = 'With Clerk';
+    //         }
+    //         // --- End Improved Status ---
+
+    //         // --- 2. PRIORITY DISPLAY LOGIC (Corrected) ---
+    //         let priorityHtml = '';
+    //         const score = letter.priorityScore || 0; // Get the score (e.g., 80)
+
+    //         if (score >= 70) { // High Priority
+    //             priorityHtml = `<span style="font-weight: 700; font-size: 12px; color: var(--danger); display: block; margin-top: 2px;">🔥 High Priority</span>`;
+    //         } else if (score >= 50) { // Medium Priority
+    //             priorityHtml = `<span style="font-weight: 600; font-size: 12px; color: var(--warn); display: block; margin-top: 2px;">⚠️ Medium Priority</span>`;
+    //         } else { // Normal Priority
+    //             priorityHtml = `<span style="font-weight: 600; font-size: 12px; color: var(--muted); display: block; margin-top: 2px;">Normal Priority</span>`;
+    //         }
+    //         // --- End Priority Logic ---
+
+    //         // --- Main Row HTML ---
+    //         row.innerHTML = `
+    //             <td>
+    //                 <strong>${letter.id}</strong>
+    //                 ${priorityHtml} </td>
+    //             <td>${letter.subject}</td>
+    //             <td>${letter.dept}</td>
+    //             <td>${letter.classification || letter.type}</td> 
+    //             <td>${letter.amount > 0 ? `₹${letter.amount.toLocaleString('en-IN')}` : 'N/A'}</td>
+    //             <td>${letter.date}</td>
+    //             <td><strong style="color: var(--primary);">${letter.stage}</strong></td>
+    //             <td><span class="status-badge ${letter.status.toLowerCase()}" title="Remarks: ${letter.remarks || 'None'}">${statusText}</span></td>
+    //             <td><button class="btn" onclick='openLetter(${JSON.stringify(letter)})'>Details</button></td>
+    //         `;
+    //     });
+    // }
+
     function populateDeanTable(data, page = 1) {
         const tableBody = document.getElementById('deanLettersBody');
         const noResultsRow = document.getElementById('noResults');
         tableBody.innerHTML = '';
-        
+
+        // --- 1. SORT BY DATE: NEWEST FIRST ---
+        data.sort((a, b) => new Date(b.date) - new Date(a.date));
+
         const startIndex = (page - 1) * rowsPerPage;
         const paginatedData = data.slice(startIndex, startIndex + rowsPerPage);
 
         noResultsRow.style.display = data.length === 0 ? 'table-row' : 'none';
+
         paginatedData.forEach(letter => {
             const row = tableBody.insertRow();
             let statusText = letter.status;
+
+            // --- Improved Status Text ---
             if (letter.status === 'Pending' && letter.stage !== 'Dean') {
                 statusText = `Pending @ ${letter.stage}`;
             } else if (letter.status === 'Approved') {
-                statusText = `Approved by ${letter.stage}`;
-            } else if (letter.status === 'Validated') {
-                statusText = `Approved by Dean`;
+                statusText = `Approved`;
+            } else if (letter.status === 'ActionTaken') {
+                statusText = `Processing...`;
+            } else if (letter.status === 'ML_DRAFTED' || letter.status === 'ML_OCR' || letter.status === 'Submitted') {
+                statusText = 'With Clerk';
             }
+            // --- End Improved Status ---
+
+            // --- 2. PRIORITY DISPLAY LOGIC (Conditional) ---
+            let priorityHtml = '';
+            if (isNeedActionFilterActive) { // <-- Check if filter is active
+                const score = letter.priorityScore || 0; 
+                if (score >= 70) {
+                    priorityHtml = `<span style="font-weight: 700; font-size: 12px; color: var(--danger); display: block; margin-top: 2px;">🔥 High Priority</span>`;
+                } else if (score >= 50) {
+                    priorityHtml = `<span style="font-weight: 600; font-size: 12px; color: var(--warn); display: block; margin-top: 2px;">⚠️ Medium Priority</span>`;
+                } else {
+                    priorityHtml = `<span style="font-weight: 600; font-size: 12px; color: var(--muted); display: block; margin-top: 2px;">Normal Priority</span>`;
+                }
+            }
+            // --- End Priority Logic ---
+
+            // --- Main Row HTML ---
             row.innerHTML = `
-                <td>${letter.id}</td><td>${letter.subject}</td><td>${letter.dept}</td><td>${letter.type}</td>
+                <td>
+                    <strong>${letter.id}</strong>
+                    ${priorityHtml} </td>
+                <td>${letter.subject}</td>
+                <td>${letter.dept}</td>
+                <td>${letter.classification || letter.type}</td> 
                 <td>${letter.amount > 0 ? `₹${letter.amount.toLocaleString('en-IN')}` : 'N/A'}</td>
-                <td>${letter.date}</td><td><strong style="color: var(--primary);">${letter.stage}</strong></td>
+                <td>${letter.date}</td>
+                <td><strong style="color: var(--primary);">${letter.stage}</strong></td>
                 <td><span class="status-badge ${letter.status.toLowerCase()}" title="Remarks: ${letter.remarks || 'None'}">${statusText}</span></td>
                 <td><button class="btn" onclick='openLetter(${JSON.stringify(letter)})'>Details</button></td>
             `;
@@ -346,18 +568,27 @@
 
         // Page Number Buttons (simplified for brevity)
         for (let i = 1; i <= pageCount; i++) {
-            const pageButton = document.createElement('button');
-            pageButton.classList.add('page-btn');
-            pageButton.textContent = i;
-            if (i === currentPage) {
-                pageButton.classList.add('active');
+            // Simple pagination: show first, last, current, and neighbors
+            if (i === 1 || i === pageCount || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                const pageButton = document.createElement('button');
+                pageButton.classList.add('page-btn');
+                pageButton.textContent = i;
+                if (i === currentPage) {
+                    pageButton.classList.add('active');
+                }
+                pageButton.addEventListener('click', () => {
+                    currentPage = i;
+                    populateDeanTable(data, currentPage);
+                    setupPagination(data);
+                });
+                paginationContainer.appendChild(pageButton);
+            } else if (i === currentPage - 2 || i === currentPage + 2) {
+                const dots = document.createElement('span');
+                dots.textContent = '...';
+                dots.style.padding = '0 8px';
+                dots.style.color = 'var(--muted)';
+                paginationContainer.appendChild(dots);
             }
-            pageButton.addEventListener('click', () => {
-                currentPage = i;
-                populateDeanTable(data, currentPage);
-                setupPagination(data);
-            });
-            paginationContainer.appendChild(pageButton);
         }
 
         // Next Button
@@ -376,10 +607,20 @@
     }
 
     function performDeanSearch() {
-        let filteredByType = deanLettersData;
-        if (currentLetterTypeFilter !== 'All') {
-            filteredByType = deanLettersData.filter(letter => letter.type === currentLetterTypeFilter);
+        let initialData = deanLettersData;
+
+        // Apply "Need Action" filter first if it's active
+        if (isNeedActionFilterActive) {
+            initialData = deanLettersData.filter(l => 
+                l.stage === 'Dean' && (l.status === 'Pending' || l.status === 'Overdue')
+            );
         }
+
+        let filteredByType = initialData;
+        if (currentLetterTypeFilter !== 'All') {
+            filteredByType = initialData.filter(letter => (letter.classification || letter.type) === currentLetterTypeFilter);
+        }
+        
         const type = document.getElementById('deanSearchType').value;
         let query;
         if (type === 'dept') {
@@ -387,12 +628,14 @@
         } else {
             query = document.getElementById('deanSearchInput').value.toLowerCase();
         }
+
         currentFilteredData = filteredByType.filter(letter => {
             if (query === '') return true;
             let valueToSearch = (letter[type] || '').toString().toLowerCase();
             return valueToSearch.includes(query);
         });
-        currentPage = 1; // Reset to first page after search
+
+        currentPage = 1; // Reset to first page after any search
         populateDeanTable(currentFilteredData, currentPage);
         setupPagination(currentFilteredData);
     }
@@ -425,26 +668,43 @@
         const token = localStorage.getItem('authToken');
         if (!token) { logout(); return; }
         try {
-            const response = await fetch('http://localhost:3000/api/letters', { headers: { 'Authorization': `Bearer ${token}` } });
+            // --- FIX 3 ---
+            // Changed URL from /api/letters to /api
+            const response = await fetch('http://localhost:3000/api', { headers: { 'Authorization': `Bearer ${token}` } });
             if (!response.ok) { if (response.status === 401 || response.status === 403) logout(); return; }
             const letters = await response.json();
             deanLettersData = letters;
             
-            const pendingCount = deanLettersData.filter(l => l.stage === 'Dean' && (l.status === 'Pending' || l.status === 'Validated')).length;
+            // Filter for letters pending *at the Dean's stage*
+            const pendingCount = deanLettersData.filter(l => l.stage === 'Dean' && (l.status === 'Pending' || l.status === 'Overdue')).length;
             document.getElementById('pendingCount').textContent = pendingCount;
             
             const activityContainer = document.getElementById("recentActivity");
             activityContainer.innerHTML = '';
-            letters.slice().reverse().slice(0, 3).forEach(letter => {
+            // Show most recent 3 letters that arrived at the Dean's desk
+            // Show most recent 3 letters that arrived at the Dean's desk
+            letters.filter(l => l.stage === 'Dean').slice(0, 3).forEach(letter => {
                 const card = document.createElement("div");
-                card.className = "activity-card";
-                card.innerHTML = `<div class="activity-icon arrived"><i class="fas fa-arrow-down"></i></div><div class="activity-details"><p class="subject">${letter.subject}</p><p class="meta">From ${letter.dept} Dept - ${letter.date}</p></div>`;
+                card.className = "activity-card"; // <-- Uses your new CSS
+                card.innerHTML = `
+                  <div class="activity-icon arrived"><i class="fas fa-arrow-down"></i></div>
+                  <div class="activity-details">
+                    <p class="subject">${letter.subject}</p>
+                    <p class="meta">From ${letter.dept} Dept - ${letter.date}</p>
+                  </div>`;
+                // Add click listener to open the letter
+                card.onclick = () => openLetter(letter);
                 activityContainer.appendChild(card);
             });
+            if (activityContainer.innerHTML === '') {
+                 activityContainer.innerHTML = '<p style="color: var(--muted); font-style: italic;">No recent activity.</p>';
+            }
 
             performDeanSearch(); // This will populate table and pagination
         } catch (error) { console.error('Failed to fetch letters:', error); }
     }
+
+
     
     document.addEventListener("DOMContentLoaded", () => {
       fetchLetters();
@@ -463,7 +723,22 @@
       document.getElementById('deanSearchType').addEventListener('change', handleDeanSearchTypeChange);
       
       document.getElementById('refreshBtn').addEventListener('click', fetchLetters);
+      // --- ADD THIS CORRECT LISTENER ---
+      document.getElementById('filterNeedActionBtn').addEventListener('click', () => {
+          isNeedActionFilterActive = !isNeedActionFilterActive; // Toggle state
+          const btn = document.getElementById('filterNeedActionBtn');
+          btn.classList.toggle('active', isNeedActionFilterActive); // Toggle visual style
+          
+          // Change button text to show state
+          if (isNeedActionFilterActive) {
+            btn.innerHTML = '📋 Show All';
+          } else {
+            btn.innerHTML = '⚡ Need Action';
+          }
 
+          performDeanSearch(); // Re-run the search
+      });
+      
       document.getElementById('rowsPerPageSelect').addEventListener('change', (e) => {
           rowsPerPage = parseInt(e.target.value, 10);
           currentPage = 1;
@@ -473,6 +748,7 @@
 
       handleDeanSearchTypeChange();
     });
+
   </script>
 </body>
 </html>

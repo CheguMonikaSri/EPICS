@@ -1,3 +1,5 @@
+<!-- vc -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -100,7 +102,7 @@
     tbody tr:hover { background: #f1f5f9; }
     #noResults td { text-align: center; padding: 20px; font-style: italic; color: var(--muted); }
     .status-badge { padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; text-transform: capitalize; }
-    .status-badge.pending { background: #fffbeb; color: #b45309; }
+    .status-badge.pending, .status-badge.overdue { background: #fffbeb; color: #b45309; }
     .status-badge.validated { background: #e0f2fe; color: #075985; }
     .status-badge.forwarded { background: #eff6ff; color: #1d4ed8; }
     .status-badge.approved { background: #f0fdf4; color: #15803d; }
@@ -113,6 +115,27 @@
     .page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
     .page-btn:disabled { background: var(--surface-2); color: var(--muted); cursor: not-allowed; }
     #rowsPerPageSelect { padding: 8px; border-radius: 8px; border: 1px solid var(--border); font-weight: 600; }
+    /* --- ADD THESE STYLES --- */
+    
+    /* 1. Animation for switching views */
+    .view-fade-in {
+        animation: fadeIn 0.4s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 2. Better hover for activity cards */
+    .activity-card:hover {
+        transform: translateX(4px);
+        background: var(--surface-2);
+        cursor: pointer;
+    }
+    .activity-card {
+        transition: transform 0.2s, background 0.2s;
+    }
+    /* --- END OF NEW STYLES --- */
   </style>
 </head>
 <body>
@@ -130,7 +153,7 @@
     </aside>
 
     <main class="main">
-      <div id="dashboardView">
+        <div id="dashboardView" class="view-fade-in">
         <h1>Vice Chancellor's Dashboard</h1>
         <section><h2 class="visually-hidden">Key Statistics</h2><div class="stats-grid"><div class="stat-card"><div class="stat-icon"><i class="fas fa-clock"></i></div><div class="stat-info"><span class="stat-title">Pending Approvals</span><span class="stat-count" id="pendingCount">0</span></div></div></div></section>
         <section>
@@ -150,7 +173,7 @@
         <section class="activity-section"><h2>Recent Activity</h2><div id="recentActivity"></div></section>
       </div>
 
-      <div id="lettersView" style="display: none">
+      <div id="lettersView" style="display: none" class="view-fade-in">
         <h1>View Letters <button id="refreshBtn" class="btn" title="Refresh Letters" style="padding: 6px 10px; font-size: 14px; vertical-align: middle; margin-left: 10px;"><i class="fas fa-sync-alt"></i></button></h1>
         <div class="type-filter" id="typeFilter">
             <button class="type-btn active" data-type="All">All Letters</button>
@@ -164,6 +187,9 @@
           </select>
           <input id="vcSearchInput" type="text" />
           <select id="vcDeptSelect" style="display: none;"></select>
+        </div>
+        <div style="margin-bottom: 10px;">
+            <button id="filterNeedActionBtn" class="btn type-btn">⚡ Need Action</button>
         </div>
         <div class="table-wrap">
           <table>
@@ -216,27 +242,59 @@
     let activeLetter = null;
     let currentPage = 1;
     let rowsPerPage = 20;
-
+    let isNeedActionFilterActive = false; 
     function logout() {
         localStorage.removeItem('authToken');
         window.location.href = './login.html';
     }
 
+    // function showView(viewName) {
+    //   document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
+    //   const activeLink = document.getElementById(`nav${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`);
+    //   if(activeLink) activeLink.classList.add("active");
+      
+    //   document.getElementById("dashboardView").style.display = viewName === 'dashboard' ? 'block' : 'none';
+    //   document.getElementById("lettersView").style.display = viewName === 'letters' ? 'block' : 'none';
+      
+    //   if (viewName === 'letters') {
+    //       document.querySelector('#typeFilter .type-btn.active').classList.remove('active');
+    //       document.querySelector('#typeFilter .type-btn[data-type="All"]').classList.add('active');
+    //       currentLetterTypeFilter = 'All';
+    //       performVcSearch();
+    //   }
+    // }
     function showView(viewName) {
       document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
       const activeLink = document.getElementById(`nav${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`);
       if(activeLink) activeLink.classList.add("active");
       
-      document.getElementById("dashboardView").style.display = viewName === 'dashboard' ? 'block' : 'none';
-      document.getElementById("lettersView").style.display = viewName === 'letters' ? 'block' : 'none';
-      
-      if (viewName === 'letters') {
+      const dashView = document.getElementById("dashboardView");
+      const lettersView = document.getElementById("lettersView");
+
+      // Hide both first
+      dashView.style.display = 'none';
+      lettersView.style.display = 'none';
+
+      // Show the one we want and re-trigger animation
+      if (viewName === 'dashboard') {
+          dashView.style.display = 'block';
+          dashView.classList.remove('view-fade-in'); // Reset animation
+          void dashView.offsetWidth; // Trigger reflow
+          dashView.classList.add('view-fade-in'); // Add animation
+      } else if (viewName === 'letters') {
+          lettersView.style.display = 'block';
+          lettersView.classList.remove('view-fade-in'); // Reset animation
+          void lettersView.offsetWidth; // Trigger reflow
+          lettersView.classList.add('view-fade-in'); // Add animation
+
+          // Reset filters when clicking the tab
           document.querySelector('#typeFilter .type-btn.active').classList.remove('active');
           document.querySelector('#typeFilter .type-btn[data-type="All"]').classList.add('active');
           currentLetterTypeFilter = 'All';
           performVcSearch();
       }
     }
+
 
     function navigateToLetters(dept) {
       showView('letters');
@@ -252,9 +310,13 @@
       document.getElementById("mSubject").textContent = letter.subject;
       document.getElementById("mId").textContent = letter.id;
       document.getElementById("mDate").textContent = letter.date;
-      document.getElementById("mType").textContent = letter.type;
+      // Use classification field from agent, fallback to type
+      const letterType = letter.classification || letter.type;
+      document.getElementById("mType").textContent = letterType;
+      
       const viewLink = document.getElementById("viewLink");
-      const signedPath = letter.signedFilePath || letter.filePath;
+      // Check all possible *previous* signed paths
+      const signedPath = letter.registrarSignedPath || letter.deanSignedPath || letter.signedFilePath || letter.filePath;
       if(signedPath) {
         viewLink.href = `http://localhost:3000/${signedPath.replace(/\\/g, '/')}`;
         viewLink.style.display = 'inline-block';
@@ -268,37 +330,30 @@
       const rejectBtn = document.getElementById('mRejectBtn');
       const actions = document.querySelector('#letterModal .actions');
 
-      const isPayment = letter.type === 'Payment';
+      const isPayment = letterType === 'Payment';
 
-      if (letter.stage === 'VC') {
-          if (letter.status === 'Pending') {
-              actions.style.display = 'flex';
-              approveBtn.disabled = false;
-              rejectBtn.disabled = false;
-              approveBtn.textContent = 'Approve';
-              if (isPayment) {
-                forwardBtn.disabled = true;
-                forwardBtn.style.display = 'inline-block';
-              } else {
-                forwardBtn.style.display = 'none';
-              }
-          } else if (letter.status === 'Validated') {
-              actions.style.display = 'flex';
-              approveBtn.disabled = true;
-              approveBtn.textContent = 'Approved ✔';
-              rejectBtn.disabled = false;
-              if (isPayment) {
-                forwardBtn.disabled = false;
-                forwardBtn.style.display = 'inline-block';
-              } else {
-                forwardBtn.style.display = 'none';
-              }
+      // --- LOGIC MODIFIED ---
+      // Only show actions if it's the VC's turn and the letter is Pending/Overdue
+      if (letter.stage === 'VC' && (letter.status === 'Pending' || letter.status === 'Overdue')) {
+          actions.style.display = 'flex';
+          rejectBtn.disabled = false;
+          
+          if (isPayment) {
+            // For Payment, the action is "Forward"
+            approveBtn.style.display = 'none';
+            forwardBtn.style.display = 'inline-block';
+            forwardBtn.disabled = false;
           } else {
-              actions.style.display = 'none';
+            // For Permission, the action is "Approve" (final step)
+            approveBtn.style.display = 'inline-block';
+            approveBtn.disabled = false;
+            forwardBtn.style.display = 'none';
           }
       } else {
+          // Letter is already processed or not the VC's turn
           actions.style.display = 'none';
       }
+      // --- END MODIFIED LOGIC ---
 
       document.getElementById("letterModal").setAttribute("aria-hidden", "false");
     }
@@ -307,7 +362,8 @@
     
     function setPipeline(letter) {
         const pipelineContainer = document.getElementById("pipeline");
-        const stages = letter.type === "Payment" ? ["Clerk", "Dean", "Registrar", "VC", "Accounts"] : ["Clerk", "Dean", "Registrar", "VC"];
+        // Use classification field from agent, fallback to type
+        const stages = (letter.classification || letter.type) === "Payment" ? ["Clerk", "Dean", "Registrar", "VC", "Accounts"] : ["Clerk", "Dean", "Registrar", "VC"];
         let currentStageIndex = stages.indexOf(letter.stage);
         
         pipelineContainer.innerHTML = stages.map((stageName, index) => {
@@ -330,6 +386,7 @@
         }).join('');
     }
     
+    // --- FUNCTION MODIFIED ---
     async function handleAction(action) {
         const token = localStorage.getItem('authToken');
         if (!activeLetter || !token) return;
@@ -337,6 +394,7 @@
         const signedFile = document.getElementById("mSigned").files[0];
         
         if (action === 'reject' && !remarks.trim()) { alert("Please provide remarks for rejection."); return; }
+        // Both 'approve' (for Permission) and 'forward' (for Payment) require a signature
         if ((action === 'approve' || action === 'forward') && !signedFile) { alert("Please upload your signed soft copy to proceed."); return; }
 
         const formData = new FormData();
@@ -345,38 +403,76 @@
         if (signedFile) formData.append('signedFile', signedFile);
 
         try {
-            const response = await fetch(`http://localhost:3000/api/letters/${activeLetter.id}`, {
+            // --- FIX 1: Correct Endpoint ---
+            const response = await fetch(`http://localhost:3000/api/${activeLetter.id}`, {
                 method: 'PUT', headers: { 'Authorization': `Bearer ${token}` }, body: formData
             });
-            if (!response.ok) throw new Error(`Action ${action} failed`);
             
             const data = await response.json();
+            if (!response.ok) throw new Error(data.message || `Action ${action} failed`);
 
-            if (action === 'approve') {
-                const index = vcLettersData.findIndex(l => l.id === data.letter.id);
-                if (index !== -1) vcLettersData[index] = data.letter;
-                
-                // If a permission letter is approved by VC, it's the final step. Close the modal.
-                if (data.letter.type === 'Permission' && data.letter.status === 'Approved') {
-                    alert('Permission Letter Approved!');
-                    closeModal();
-                    await fetchLetters();
-                } else { // Otherwise (it's a payment letter), update the modal to enable forwarding
-                    openLetter(data.letter);
-                    performVcSearch();
-                }
-            } else {
-                alert(`Letter successfully processed!`);
-                closeModal();
-                await fetchLetters();
-            }
+            // --- FIX 2: Correct Server Response Handling ---
+            // Backend returns a message, not the letter object.
+            // Just show the message, close the modal, and refresh the list.
+            alert(data.message || `Letter successfully processed!`);
+            closeModal();
+            await fetchLetters();
+
         } catch (error) { alert(`Error: ${error.message}`); console.error(error); }
     }
 
-    function doApprove() { handleAction('approve'); }
-    function doForward() { handleAction('forward'); }
+    function doApprove() { handleAction('approve'); } // Used for Permission letters
+    function doForward() { handleAction('forward'); } // Used for Payment letters
     function doReject() { handleAction('reject'); }
     
+    // function populateVcTable(data, page = 1) {
+    //     const tableBody = document.getElementById('vcLettersBody');
+    //     const noResultsRow = document.getElementById('noResults');
+    //     tableBody.innerHTML = '';
+
+    //     const startIndex = (page - 1) * rowsPerPage;
+    //     const paginatedData = data.slice(startIndex, startIndex + rowsPerPage);
+
+    //     noResultsRow.style.display = data.length === 0 ? 'table-row' : 'none';
+
+    //     paginatedData.forEach(letter => {
+    //         const row = tableBody.insertRow();
+    //         let statusText = letter.status.replace('_', ' ');
+    //         if ((letter.status === 'Pending' || letter.status === 'Overdue') && letter.stage !== 'VC') {
+    //             statusText = `Pending @ ${letter.stage}`;
+    //         } else if (letter.status === 'Approved') {
+    //             statusText = `Approved`;
+    //         } else if (letter.status === 'ActionTaken') {
+    //              statusText = `Processing...`;
+    //         }
+
+    //         // --- PRIORITY DISPLAY LOGIC (Added) ---
+    //         let priorityHtml = '';
+    //         const score = letter.priorityScore || 0; // Get the score (e.g., 80)
+
+    //         if (score >= 70) { // High Priority
+    //             priorityHtml = `<span style="font-weight: 700; font-size: 12px; color: var(--danger); display: block; margin-top: 2px;">🔥 High Priority</span>`;
+    //         } else if (score >= 50) { // Medium Priority
+    //             priorityHtml = `<span style="font-weight: 600; font-size: 12px; color: var(--warn); display: block; margin-top: 2px;">⚠️ Medium Priority</span>`;
+    //         } else { // Normal Priority
+    //             priorityHtml = `<span style="font-weight: 600; font-size: 12px; color: var(--muted); display: block; margin-top: 2px;">Normal Priority</span>`;
+    //         }
+    //         // --- End Priority Logic ---
+
+    //         row.innerHTML = `
+    //             <td>
+    //                 <strong>${letter.id}</strong>
+    //                 ${priorityHtml} </td>
+    //             <td>${letter.subject}</td><td>${letter.dept}</td>
+    //             <td>${letter.classification || letter.type}</td>
+    //             <td>${letter.amount > 0 ? `₹${letter.amount.toLocaleString('en-IN')}` : 'N/A'}</td>
+    //             <td>${letter.date}</td>
+    //             <td><strong style="color: var(--primary);">${letter.stage}</strong></td>
+    //             <td><span class="status-badge ${letter.status.toLowerCase()}" title="Remarks: ${letter.remarks || 'None'}">${statusText}</span></td>
+    //             <td><button class="btn" onclick='openLetter(${JSON.stringify(letter)})'>Details</button></td>
+    //         `;
+    //     });
+    // }
     function populateVcTable(data, page = 1) {
         const tableBody = document.getElementById('vcLettersBody');
         const noResultsRow = document.getElementById('noResults');
@@ -389,17 +485,35 @@
 
         paginatedData.forEach(letter => {
             const row = tableBody.insertRow();
-            let statusText = letter.status;
-            if (letter.status === 'Pending' && letter.stage !== 'VC') {
+            let statusText = letter.status.replace('_', ' ');
+            if ((letter.status === 'Pending' || letter.status === 'Overdue') && letter.stage !== 'VC') {
                 statusText = `Pending @ ${letter.stage}`;
             } else if (letter.status === 'Approved') {
-                statusText = `Approved by ${letter.stage}`;
-            } else if (letter.status === 'Validated') {
-                statusText = `Approved by VC`;
+                statusText = `Approved`;
+            } else if (letter.status === 'ActionTaken') {
+                 statusText = `Processing...`;
             }
 
+            // --- PRIORITY DISPLAY LOGIC (Now Conditional) ---
+            let priorityHtml = '';
+            if (isNeedActionFilterActive) { // <-- Check if filter is active
+                const score = letter.priorityScore || 0; 
+                if (score >= 70) {
+                    priorityHtml = `<span style="font-weight: 700; font-size: 12px; color: var(--danger); display: block; margin-top: 2px;">🔥 High Priority</span>`;
+                } else if (score >= 50) {
+                    priorityHtml = `<span style="font-weight: 600; font-size: 12px; color: var(--warn); display: block; margin-top: 2px;">⚠️ Medium Priority</span>`;
+                } else {
+                    priorityHtml = `<span style="font-weight: 600; font-size: 12px; color: var(--muted); display: block; margin-top: 2px;">Normal Priority</span>`;
+                }
+            }
+            // --- End Priority Logic ---
+
             row.innerHTML = `
-                <td>${letter.id}</td><td>${letter.subject}</td><td>${letter.dept}</td><td>${letter.type}</td>
+                <td>
+                    <strong>${letter.id}</strong>
+                    ${priorityHtml} </td>
+                <td>${letter.subject}</td><td>${letter.dept}</td>
+                <td>${letter.classification || letter.type}</td>
                 <td>${letter.amount > 0 ? `₹${letter.amount.toLocaleString('en-IN')}` : 'N/A'}</td>
                 <td>${letter.date}</td>
                 <td><strong style="color: var(--primary);">${letter.stage}</strong></td>
@@ -408,6 +522,7 @@
             `;
         });
     }
+
 
     function setupPagination(data) {
         const paginationContainer = document.getElementById('paginationContainer');
@@ -430,18 +545,27 @@
         paginationContainer.appendChild(prevButton);
 
         for (let i = 1; i <= pageCount; i++) {
-            const pageButton = document.createElement('button');
-            pageButton.classList.add('page-btn');
-            pageButton.textContent = i;
-            if (i === currentPage) {
-                pageButton.classList.add('active');
+             // Simple pagination: show first, last, current, and neighbors
+            if (i === 1 || i === pageCount || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                const pageButton = document.createElement('button');
+                pageButton.classList.add('page-btn');
+                pageButton.textContent = i;
+                if (i === currentPage) {
+                    pageButton.classList.add('active');
+                }
+                pageButton.addEventListener('click', () => {
+                    currentPage = i;
+                    populateVcTable(data, currentPage);
+                    setupPagination(data);
+                });
+                paginationContainer.appendChild(pageButton);
+            } else if (i === currentPage - 2 || i === currentPage + 2) {
+                const dots = document.createElement('span');
+                dots.textContent = '...';
+                dots.style.padding = '0 8px';
+                dots.style.color = 'var(--muted)';
+                paginationContainer.appendChild(dots);
             }
-            pageButton.addEventListener('click', () => {
-                currentPage = i;
-                populateVcTable(data, currentPage);
-                setupPagination(data);
-            });
-            paginationContainer.appendChild(pageButton);
         }
 
         const nextButton = document.createElement('button');
@@ -458,11 +582,45 @@
         paginationContainer.appendChild(nextButton);
     }
 
+    // function performVcSearch() {
+    //     let filteredByType = vcLettersData;
+    //     if (currentLetterTypeFilter !== 'All') {
+    //         // Use classification field from agent, fallback to type
+    //         filteredByType = vcLettersData.filter(letter => (letter.classification || letter.type) === currentLetterTypeFilter);
+    //     }
+    //     const type = document.getElementById('vcSearchType').value;
+    //     let query;
+    //     if (type === 'dept') {
+    //         query = document.getElementById('vcDeptSelect').value.toLowerCase();
+    //     } else {
+    //         query = document.getElementById('vcSearchInput').value.toLowerCase();
+    //     }
+    //     currentFilteredData = filteredByType.filter(letter => {
+    //         if (query === '') return true;
+    //         let valueToSearch = (letter[type] || '').toString().toLowerCase();
+    //         return valueToSearch.includes(query);
+    //     });
+    //     currentPage = 1;
+    //     populateVcTable(currentFilteredData, currentPage);
+    //     setupPagination(currentFilteredData);
+    // }
+    
     function performVcSearch() {
-        let filteredByType = vcLettersData;
-        if (currentLetterTypeFilter !== 'All') {
-            filteredByType = vcLettersData.filter(letter => letter.type === currentLetterTypeFilter);
+        let initialData = vcLettersData;
+
+        // Apply "Need Action" filter first if it's active
+        if (isNeedActionFilterActive) {
+            initialData = vcLettersData.filter(l => 
+                l.stage === 'VC' && (l.status === 'Pending' || l.status === 'Overdue')
+            );
         }
+
+        let filteredByType = initialData;
+        if (currentLetterTypeFilter !== 'All') {
+            // Use classification field from agent, fallback to type
+            filteredByType = initialData.filter(letter => (letter.classification || letter.type) === currentLetterTypeFilter);
+        }
+
         const type = document.getElementById('vcSearchType').value;
         let query;
         if (type === 'dept') {
@@ -479,7 +637,7 @@
         populateVcTable(currentFilteredData, currentPage);
         setupPagination(currentFilteredData);
     }
-    
+
     function handleVcSearchTypeChange() {
         const searchInput = document.getElementById('vcSearchInput');
         const deptSelect = document.getElementById('vcDeptSelect');
@@ -504,27 +662,47 @@
         });
     }
 
+    // --- FUNCTION MODIFIED ---
     async function fetchLetters() {
         const token = localStorage.getItem('authToken');
         if (!token) { logout(); return; }
         try {
-            const response = await fetch('http://localhost:3000/api/letters', { headers: { 'Authorization': `Bearer ${token}` } });
+            // --- FIX 3: Correct Endpoint ---
+            const response = await fetch('http://localhost:3000/api', { headers: { 'Authorization': `Bearer ${token}` } });
             if (!response.ok) { if (response.status === 401 || response.status === 403) logout(); return; }
             
             const letters = await response.json();
+            // Server.js already filters for the VC, so no client-side filtering needed
             vcLettersData = letters;
             
-            const pendingCount = vcLettersData.filter(l => l.stage === 'VC' && (l.status === 'Pending' || l.status === 'Validated')).length;
+            const pendingCount = vcLettersData.filter(l => l.stage === 'VC' && (l.status === 'Pending' || l.status === 'Overdue')).length;
             document.getElementById('pendingCount').textContent = pendingCount;
             
             const activityContainer = document.getElementById("recentActivity");
             activityContainer.innerHTML = '';
-            letters.slice().reverse().slice(0, 3).forEach(letter => {
+            // Show recent letters *that arrived at the VC's desk*
+            // Show recent letters *that arrived at the VC's desk*
+
+
+            vcLettersData.filter(l => l.stage === 'VC').slice(0, 3).forEach(letter => {
                 const card = document.createElement("div");
-                card.className = "activity-card";
-                card.innerHTML = `<div class="activity-icon arrived"><i class="fas fa-arrow-down"></i></div><div class="activity-details"><p class="subject">${letter.subject}</p><p class="meta">From Registrar's Office - ${letter.date}</p></div>`;
+                card.className = "activity-card"; // <-- Uses your existing CSS
+                card.innerHTML = `
+                  <div class="activity-icon arrived"><i class="fas fa-arrow-down"></i></div>
+                  <div class="activity-details">
+                    <p class="subject">${letter.subject}</p>
+                    <p class="meta">From Registrar's Office - ${letter.date}</p>
+                  </div>`;
+                // Add click listener to open the letter
+                card.onclick = () => openLetter(letter); 
                 activityContainer.appendChild(card);
             });
+
+
+             if (activityContainer.innerHTML === '') {
+                 activityContainer.innerHTML = '<p style="color: var(--muted); font-style: italic;">No recent activity.</p>';
+            }
+
             performVcSearch();
         } catch (error) { console.error('Failed to fetch letters:', error); }
     }
@@ -546,7 +724,19 @@
       document.getElementById('vcSearchType').addEventListener('change', handleVcSearchTypeChange);
       
       document.getElementById('refreshBtn').addEventListener('click', fetchLetters);
-
+      document.getElementById('filterNeedActionBtn').addEventListener('click', () => {
+          isNeedActionFilterActive = !isNeedActionFilterActive; // Toggle state
+          const btn = document.getElementById('filterNeedActionBtn');
+          btn.classList.toggle('active', isNeedActionFilterActive); // Toggle visual style
+          
+          if (isNeedActionFilterActive) {
+            btn.innerHTML = '📋 Show All';
+          } else {
+            btn.innerHTML = '⚡ Need Action';
+          }
+          // Re-run the search, which will now use the filter
+          performVcSearch();
+      });
       document.getElementById('rowsPerPageSelect').addEventListener('change', (e) => {
           rowsPerPage = parseInt(e.target.value, 10);
           currentPage = 1;

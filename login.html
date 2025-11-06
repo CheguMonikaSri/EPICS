@@ -6,27 +6,174 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fa; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
-        .header { width: 100%; background-color: #1b0a3e; text-align: center; position: absolute; top: 0; }
-        .header img { width: 100%; max-height: 160px; object-fit: contain; }
-        .login-container { background-color: #ffffff; padding: 30px 40px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; margin-top: 160px; }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-image: linear-gradient(rgba(27, 10, 62, 0.6), rgba(136, 130, 144, 0.6)), url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            margin: 0; 
+            padding: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+        }
+        .header { 
+            width: 100%; 
+            background-color: #1b0a3e; 
+            text-align: center; 
+            position: absolute; 
+            top: 0; 
+            /* --- Styles Added --- */
+            padding: 20px 15px;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 22px; /* Main title */
+            letter-spacing: 1px;
+        }
+        .header p {
+            margin: 4px 0 0;
+            font-size: 12px; /* Subtitles */
+            font-weight: 600; /* Still bold, but slightly less than the title */
+            opacity: 0.9;
+        }
+       .login-container { 
+            background-color: #ffffff; 
+            padding: 30px 40px; 
+            border-radius: 20px; /* INCREASED: More rounded edges */
+            /* Softer, more modern shadow */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+            width: 100%; 
+            max-width: 360px; /* DECREASED: Made the box smaller */
+            text-align: center; 
+            margin-top: 140px; 
+            /* Added animation */
+            animation: fadeIn 0.6s ease-out;
+            margin-top: 140px; /* Adjusted spacing for the new text header */
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        /* Added animation keyframes */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .login-container img.logo { width: 80px; margin-bottom: 10px; }
         .login-container h2 { margin-bottom: 20px; color: #333; }
-        label { font-weight: bold; display: block; margin: 15px 0 5px; text-align: left; }
-        input[type="text"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+        label { 
+            font-weight: bold; 
+            display: block; 
+            margin: 15px 0 5px; 
+            text-align: left; 
+        }
+        input[type="text"], input[type="password"] { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            font-size: 16px; 
+            /* Added transition */
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        /* Added :focus state for inputs */
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: #1b0a3e; /* Match button color */
+            box-shadow: 0 0 0 3px rgba(27, 10, 62, 0.15);
+            outline: none;
+        }
+
         .password-container { position: relative; }
-        .password-container input { padding-right: 120px; }
-        .toggle-password { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background-color: #f0f0f0; color: #555; border: 1px solid #ccc; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; white-space: nowrap; }
+        .password-container input { padding-right: 60px; } /* Adjusted padding */
+        
+        /* Styled the "Show/Hide" button */
+        .toggle-password { 
+            position: absolute; 
+            right: 5px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            /* Removed button styles */
+            background: none;
+            border: none;
+            color: #1b0a3e;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 14px; 
+        }
+        
         .forgot-password { text-align: right; margin-top: 8px; }
-        .forgot-password a { font-size: 14px; color: #0056b3; text-decoration: none; }
-        button.login-btn { width: 100%; padding: 12px; background-color: #0056b3; color: white; font-size: 16px; font-weight: bold; border: none; border-radius: 6px; margin-top: 20px; cursor: pointer; }
-        .error { color: red; font-size: 14px; margin-top: 10px; min-height: 1em; }
+        .forgot-password a { 
+            font-size: 14px; 
+            color: #1b0a3e; /* Match button color */
+            text-decoration: none; 
+        }
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        button.login-btn { 
+            width: 100%; 
+            padding: 12px; 
+            background-color: #1b0a3e; /* Matched header */
+            color: white; 
+            font-size: 16px; 
+            font-weight: bold; 
+            border: none; 
+            border-radius: 6px; 
+            margin-top: 20px; 
+            cursor: pointer; 
+            /* Added transition */
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        /* Added :hover state for button */
+        button.login-btn:hover {
+            background-color: #3b2a5e; /* Darker shade */
+            transform: translateY(-2px);
+        }
+
+        /* Added :disabled state for loading */
+        button.login-btn:disabled {
+            background-color: #9a9a9b;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error { 
+            color: #d93025; /* Stronger red */
+            font-weight: 600; 
+            font-size: 14px; 
+            margin-top: 15px; 
+            min-height: 1em; 
+        }
     </style>
 </head>
 <body>
 
-    <div class="header">
+    <!-- <div class="header">
         <img src="header-banner.png" alt="Siddhartha Academy Banner">
+    </div> -->
+    <div class="header">
+        <h1>SIDDHARTHA ACADEMY OF HIGHER EDUCATION</h1>
+        <p>An Institution DEEMED TO BE UNIVERSITY</p>
+        <p>(Under Section 3 of UGC Act, 1956)</p>
+        <p>(Sponsored by Siddhartha Academy of General & Technical Education), Vijayawada, A.P.</p>
     </div>
 
     <div class="login-container">
@@ -34,11 +181,11 @@
         <h2>Login</h2>
         <form id="loginForm">
             <label for="email">User ID</label>
-            <input type="text" id="email" name="email" placeholder="e.g., clerk@cse.com" required>
+            <input type="text" id="email" name="email" placeholder="" required>
 
             <label for="password">Password</label>
             <div class="password-container">
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                <input type="password" id="password" name="password" placeholder="" required>
                 <button type="button" class="toggle-password" onclick="togglePassword()">Show</button>
             </div>
 
@@ -47,7 +194,8 @@
             </div>
 
             <button type="submit" class="login-btn">Login</button>
-            <div class="error" id="errorMsg"></div>
+            <!-- <div class="error" id="errorMsg"></div> -->
+             <div class="error" id="errorMsg" role="alert" aria-live="polite"></div>
         </form>
     </div>
 
@@ -59,12 +207,66 @@
             toggleButton.textContent = passwordInput.type === "password" ? "Show" : "Hide";
         }
 
+        // document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        //     e.preventDefault();
+        //     const email = document.getElementById('email').value.trim();
+        //     const password = document.getElementById('password').value.trim();
+        //     const errorMsg = document.getElementById('errorMsg');
+        //     errorMsg.textContent = '';
+
+        //     try {
+        //         const response = await fetch('http://localhost:3000/api/login', {
+        //             method: 'POST',
+        //             headers: { 'Content-Type': 'application/json' },
+        //             body: JSON.stringify({ email, password })
+        //         });
+
+        //         const data = await response.json();
+
+        //         if (!response.ok) {
+        //             errorMsg.textContent = data.message || 'Login failed!';
+        //             return;
+        //         }
+                
+        //         // Login successful, save the token and redirect
+        //         localStorage.setItem('authToken', data.token);
+                
+        //         // Redirect based on role
+        //         const role = data.user.role.toLowerCase();
+                
+        //         const roleToPageMap = {
+        //             'clerk': './clerk.html',
+        //             'dean': './dean.html',
+        //             'registrar': './registrar.html',
+        //             'vc': './vc.html',
+        //             'accounts': './acc.html'
+        //         };
+
+        //         const page = roleToPageMap[role];
+        //         if (page) {
+        //             window.location.href = page;
+        //         } else {
+        //             errorMsg.textContent = 'Unknown user role.';
+        //         }
+
+        //     } catch (error) {
+        //         errorMsg.textContent = 'Could not connect to the server. Please ensure it is running.';
+        //         console.error('Login error:', error);
+        //     }
+        // });
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
             const errorMsg = document.getElementById('errorMsg');
+            const loginButton = document.querySelector('.login-btn'); // Get the button
+
             errorMsg.textContent = '';
+            
+            // --- ADDED ---
+            loginButton.disabled = true;
+            loginButton.textContent = 'Logging in...';
+            // --- END ADDED ---
 
             try {
                 const response = await fetch('http://localhost:3000/api/login', {
@@ -77,6 +279,10 @@
 
                 if (!response.ok) {
                     errorMsg.textContent = data.message || 'Login failed!';
+                    // --- ADDED ---
+                    loginButton.disabled = false; // Re-enable on failure
+                    loginButton.textContent = 'Login';
+                    // --- END ADDED ---
                     return;
                 }
                 
@@ -99,11 +305,19 @@
                     window.location.href = page;
                 } else {
                     errorMsg.textContent = 'Unknown user role.';
+                    // --- ADDED ---
+                    loginButton.disabled = false; // Re-enable on failure
+                    loginButton.textContent = 'Login';
+                    // --- END ADDED ---
                 }
 
             } catch (error) {
                 errorMsg.textContent = 'Could not connect to the server. Please ensure it is running.';
                 console.error('Login error:', error);
+                // --- ADDED ---
+                loginButton.disabled = false; // Re-enable on failure
+                loginButton.textContent = 'Login';
+                // --- END ADDED ---
             }
         });
     </script>

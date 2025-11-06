@@ -1,373 +1,935 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Clerk Dashboard</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
-  <style>
-    :root { --primary: #6c5ce7; --dark: #2c3e50; --success: #27ae60; --warn: #f39c12; --danger: #e74c3c; --muted: #6c757d; --border-color: #dee2e6; --light-gray: #f8f9fa; }
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
-    body { background: linear-gradient(135deg, #74ebd5, #9face6); color: #333; }
-    header { background: rgba(0,0,0,.7); color: #fff; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(10px); box-shadow: 0 4px 10px rgba(0,0,0,.3); }
-    header img { height: 50px; }
-    header h1 { font-size: 22px; }
-    header button { background: #ff4757; border: 0; color: #fff; padding: 10px 14px; border-radius: 10px; cursor: pointer; }
-    .container { display: flex; height: calc(100vh - 80px); }
-    nav { width: 240px; background: rgba(0,0,0,.8); color: #fff; backdrop-filter: blur(12px); overflow-y: auto; padding: 15px; }
-    nav ul { list-style: none; padding: 0; }
-    nav li { padding: 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; transition: .2s padding-left, .2s background; border-radius: 8px; }
-    nav li:hover { background: rgba(255,255,255,.18); padding-left: 20px; }
-    nav li.active { background: var(--primary); }
-    main { flex: 1; padding: 25px; overflow-y: auto; }
-    .card { background: rgba(255,255,255,.92); padding: 20px; border-radius: 15px; box-shadow: 0 6px 15px rgba(0,0,0,.2); margin-bottom: 25px; animation: fadeIn .4s ease; }
-    h2 { margin: 0 0 10px; color: var(--dark); }
-    input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--border-color); border-radius: 8px; outline: 0; }
-    button { background: linear-gradient(135deg, var(--primary), #0984e3); color: #fff; padding: 12px 18px; border: 0; border-radius: 10px; cursor: pointer; transition: transform 0.2s; }
-    button:hover { transform: scale(1.03); }
-    .btn.secondary { background: var(--muted); }
-    .btn.secondary i { margin-right: 6px; }
-    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .toolbar h2 { margin-bottom: 0; }
-    .search-bar { display: flex; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-bottom: 20px; background: #fff; }
-    .search-bar select { margin: 0; border: none; border-right: 1px solid var(--border-color); border-radius: 0; background-color: var(--light-gray); width: auto; }
-    .search-bar input { margin: 0; border: none; flex-grow: 1; }
-    .table-wrap { overflow-x: auto; border-radius: 10px; }
-    table { width: 100%; border-collapse: collapse; min-width: 850px; font-size: 14px; }
-    th, td { padding: 10px 15px; text-align: left; vertical-align: middle; }
-    thead th { background: var(--dark); color: #fff; position: sticky; top: 0; }
-    .details-btn, .resubmit-btn { padding: 5px 12px; font-size: 13px; }
-    .resubmit-btn { background: var(--warn); }
-    .details-row { background: #e9ecef !important; display: none; }
-    .details-row td { padding: 0; }
-    .pipeline-container { padding: 20px; }
-    .pipeline { display: flex; justify-content: space-between; list-style: none; position: relative; padding: 0; margin: 0; }
-    .pipeline::before { content: ''; position: absolute; top: 14px; left: 0; right: 0; height: 3px; background-color: var(--border-color); z-index: 1; }
-    .pipeline-step { position: relative; z-index: 2; text-align: center; flex-basis: 0; flex-grow: 1; }
-    .pipeline-step .step-icon { width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; border: 3px solid white; font-weight: bold; }
-    .pipeline-step .step-label { font-size: 12px; font-weight: 500; color: var(--muted); }
-    .pipeline-step.completed .step-icon { background-color: var(--success); color: white; }
-    .pipeline-step.current .step-icon { background-color: var(--warn); color: white; }
-    .pipeline-step.rejected .step-icon { background-color: var(--danger); color: white; }
-    .pipeline-step.pending .step-icon { background-color: var(--border-color); color: var(--muted); }
-    .status-badge { padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; text-transform: capitalize; }
-    .status-badge[title] { cursor: help; }
-    .status-badge.pending { background: #fffbeb; color: #b45309; }
-    .status-badge.validated, .status-badge.forwarded { background: #eff6ff; color: #1d4ed8; }
-    .status-badge.approved { background: #f0fdf4; color: #15803d; }
-    .status-badge.rejected { background: #fef2f2; color: #b91c1c; }
-    .pagination-controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; }
-    .pagination-controls button:disabled { background: #bdc3c7; cursor: not-allowed; transform: none; }
-    #pageInfo { font-weight: 600; font-size: 15px; color: var(--dark); }
-    .sr-updates { position: fixed; inset: auto 16px 16px auto; background: #111827; color: #fff; padding: 8px 12px; border-radius: 10px; opacity: .95; font-size: 13px; display: none; z-index: 100; }
-    @keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
-    /* Add these new CSS rules inside the <style> tag */
+    <meta charset="UTF-8">
+    <title>Clerk Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #6c5ce7; --dark: #2c3e50; --success: #27ae60; --warn: #f39c12; --danger: #e74c3c; --muted: #6c757d; --border-color: #dee2e6; --light-gray: #f8f9fa; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
+        body { background: linear-gradient(135deg, #74ebd5, #9face6); color: #333; }
+        header { background: rgba(0,0,0,.7); color: #fff; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(10px); box-shadow: 0 4px 10px rgba(0,0,0,.3); }
+        header img { height: 50px; }
+        header h1 { font-size: 22px; }
+        header button { background: #ff4757; border: 0; color: #fff; padding: 10px 14px; border-radius: 10px; cursor: pointer; }
+        .container { display: flex; height: calc(100vh - 80px); }
+        nav { width: 240px; background: rgba(0,0,0,.8); color: #fff; backdrop-filter: blur(12px); overflow-y: auto; padding: 15px; }
+        nav ul { list-style: none; padding: 0; }
+        nav li { padding: 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; transition: .2s padding-left, .2s background; border-radius: 8px; }
+        nav li:hover { background: rgba(255,255,255,.18); padding-left: 20px; }
+        nav li.active { background: var(--primary); }
+        main { flex: 1; padding: 25px; overflow-y: auto; }
+        .card { background: rgba(255,255,255,.92); padding: 20px; border-radius: 15px; box-shadow: 0 6px 15px rgba(0,0,0,.2); margin-bottom: 25px; animation: fadeIn .4s ease; }
+        h2 { margin: 0 0 10px; color: var(--dark); }
+        label { display: block; margin-top: 15px; font-weight: 600; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--border-color); border-radius: 8px; outline: 0; }
+        button { background: linear-gradient(135deg, var(--primary), #0984e3); color: #fff; padding: 12px 18px; border: 0; border-radius: 10px; cursor: pointer; transition: transform 0.2s; }
+        button:hover { transform: scale(1.03); }
+        button:disabled { background: #95a5a6; cursor: not-allowed; transform: none; }
+        .btn.secondary { background: var(--muted); }
+        .btn.secondary i { margin-right: 6px; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .toolbar h2 { margin-bottom: 0; }
+        .search-bar { display: flex; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-bottom: 20px; background: #fff; }
+        .search-bar select { margin: 0; border: none; border-right: 1px solid var(--border-color); border-radius: 0; background-color: var(--light-gray); width: auto; }
+        .search-bar input { margin: 0; border: none; flex-grow: 1; }
+        .table-wrap { overflow-x: auto; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; min-width: 850px; font-size: 14px; }
+        th, td { padding: 10px 15px; text-align: left; vertical-align: middle; }
+        thead th { background: var(--dark); color: #fff; position: sticky; top: 0; }
+        .details-btn, .resubmit-btn { padding: 5px 12px; font-size: 13px; }
+        .resubmit-btn { background: var(--warn); }
+        .details-row { background: #e9ecef !important; display: none; }
+        .details-row td { padding: 0; }
+        .pipeline-container { padding: 20px; }
+        .pipeline { display: flex; justify-content: space-between; list-style: none; position: relative; padding: 0; margin: 0; }
+        .pipeline::before { content: ''; position: absolute; top: 14px; left: 0; right: 0; height: 3px; background-color: var(--border-color); z-index: 1; }
+        .pipeline-step { position: relative; z-index: 2; text-align: center; flex-basis: 0; flex-grow: 1; }
+        .pipeline-step .step-icon { width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; border: 3px solid white; font-weight: bold; }
+        .pipeline-step .step-label { font-size: 12px; font-weight: 500; color: var(--muted); }
+        .pipeline-step.completed .step-icon { background-color: var(--success); color: white; }
+        .pipeline-step.current .step-icon { background-color: var(--warn); color: white; }
+        .pipeline-step.rejected .step-icon { background-color: var(--danger); color: white; }
+        .pipeline-step.pending .step-icon { background-color: var(--border-color); color: var(--muted); }
+        .status-badge { padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; text-transform: capitalize; }
+        .status-badge[title] { cursor: help; }
+        .status-badge.pending, .status-badge.ml_ocr, .status-badge.ml_drafted, .status-badge.submitted, .status-badge.actiontaken, .status-badge.overdue { background: #fffbeb; color: #b45309; }
+        .status-badge.approved { background: #f0fdf4; color: #15803d; }
+        .status-badge.rejected { background: #fef2f2; color: #b91c1c; }
+        .pagination-controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; }
+        .pagination-controls button:disabled { background: #bdc3c7; cursor: not-allowed; transform: none; }
+        #pageInfo { font-weight: 600; font-size: 15px; color: var(--dark); }
+        .sr-updates { position: fixed; inset: auto 16px 16px auto; background: #111827; color: #fff; padding: 8px 12px; border-radius: 10px; opacity: .95; font-size: 13px; display: none; z-index: 100; }
+        @keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+        .actions-cell { display: flex; gap: 5px; align-items: center; }
+        .download-btn { background: var(--success); text-decoration: none; padding: 5px 12px; font-size: 13px; color: white !important; border-radius: 5px; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        /* NEW: Add styles for the chart grid */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        .chart-box {
+            background: rgba(255,255,255,.95);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.1);
+        }
+        .chart-box h3 {
+            margin: 0 0 15px;
+            text-align: center;
+            color: var(--dark);
+        }
+        .filter-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+        .btn {
+             background: #007bff;
+             color: white;
+             border: none;
+             padding: 8px 16px;
+             border-radius: 6px;
+             cursor: pointer;
+        }
+        .btn:hover {
+              background: #0056b3;
+        }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
 
-.actions-cell {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-}
-.download-btn {
-    background: var(--success);
-    text-decoration: none; /* Removes underline from the link */
-    padding: 5px 12px;
-    font-size: 13px;
-    color: white !important;
-}
-  </style>
+        /* --- ADD ALL STYLES BELOW --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--light-gray);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,.05);
+        }
+        .stat-card h3 {
+            margin: 0 0 10px;
+            color: var(--dark);
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-card .stat-count {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0;
+        }
+        .stat-card ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+        .stat-card ul li {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+    </style>
 </head>
 <body>
 <header>
-  <img src="logo.png" alt="College Logo">
-  <h1 id="headerTitle">Clerk Dashboard</h1>
-  <button onclick="logout()">Logout</button>
+    <img src="logo.png" alt="College Logo">
+    <h1 id="headerTitle">Clerk Dashboard</h1>
+    <button onclick="logout()">Logout</button>
 </header>
 <div class="container">
-  <nav>
-    <ul id="navLinks">
-      <li id="nav-upload" class="active" onclick="showSection('upload'); resetUploadForm();"><i class="fa fa-upload"></i> Upload Letter</li>
-      <li id="nav-records" onclick="showSection('records')"><i class="fa fa-folder-open"></i> View Letters</li>
-      <li id="nav-password" onclick="showSection('password')"><i class="fa fa-key"></i> Change Password</li>
-    </ul>
-  </nav>
-  <main>
-    <section id="upload" class="card">
-      <h2 id="uploadTitle">Upload New Letter</h2>
-      <form id="uploadForm">
-        <input type="hidden" id="letterId" />
-        <label for="subject">Subject: <span style="color:red">*</span></label>
-        <input id="subject" type="text" placeholder="Enter letter subject" required />
-        <label for="letterType">Letter Type:</label>
-        <select id="letterType" required><option value="">-- Select --</option><option value="Permission">Permission</option><option value="Payment">Payment</option></select>
-        <label for="amount">Amount (for Payment Letters):</label>
-        <input id="amount" type="number" placeholder="Enter amount (if applicable)" />
-        <label for="file">Upload File (PDF/Doc): <span id="file-label-required" style="color:red">*</span></label>
-        <input id="file" type="file" accept=".pdf,.doc,.docx" required/>
-        <button type="submit" id="submitBtn">Submit for Approval</button>
-      </form>
-    </section>
-    <section id="records" class="card" style="display:none;">
-      <div class="toolbar">
-        <h2 id="recordsTitle">Uploaded Letters</h2>
-        <button id="reloadBtn" class="btn secondary"><i class="fas fa-sync-alt"></i> Refresh</button>
-      </div>
-      <div class="search-bar">
-        <select id="searchType" aria-label="Search category"><option value="subject" selected>Subject</option><option value="id">ID</option><option value="date">Date</option><option value="amount">Amount</option></select>
-        <input id="searchInput" type="text" aria-label="Search letters" />
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>ID</th><th>Subject</th><th>Type</th><th>Amount</th><th>Date</th><th>Current Stage</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="lettersBody"></tbody>
-          <tfoot><tr id="noResults" style="display: none;"><td colspan="8">No letters found.</td></tr></tfoot>
-        </table>
-      </div>
-      <div class="pagination-controls">
-        <button id="prevPageBtn" class="btn">« Previous</button>
-        <span id="pageInfo"></span>
-        <button id="nextPageBtn" class="btn">Next »</button>
-      </div>
-    </section>
-    <section id="password" class="card" style="display:none;">
-      <h2>Change Password</h2>
-      <form onsubmit="event.preventDefault(); announce('Password updated');">
-        <label for="oldPwd">Old Password:</label><input id="oldPwd" type="password" required />
-        <label for="newPwd">New Password:</label><input id="newPwd" type="password" required />
-        <label for="confirmPwd">Confirm Password:</label><input id="confirmPwd" type="password" required />
-        <button type="submit">Update</button>
-      </form>
-    </section>
-  </main>
+    <nav>
+        <ul id="navLinks">
+            <li id="nav-upload" class="active" onclick="showSection('upload'); resetUploadView();"><i class="fa fa-upload"></i> Upload Letter</li>
+            <li id="nav-records" onclick="showSection('records')"><i class="fa fa-folder-open"></i> View Letters</li>
+            <li id="nav-password" onclick="showSection('password')"><i class="fa fa-key"></i> Change Password</li>
+            <li id="nav-analysis" onclick="showSection('analysis')"><i class="fa fa-chart-bar"></i> Analytics</li>
+        </ul>
+    </nav>
+    <main>
+        <section id="upload" class="card">
+            <div id="initial-upload-view">
+                <h2 id="uploadTitle">Upload New Letter</h2>
+                <p><strong>Step 1:</strong> Select the letter file. The MAS will analyze it and pre-fill the form fields for your review.</p>
+                <label for="file">Upload File (PDF/Doc/Image): <span style="color:red">*</span></label>
+                <input id="file" type="file" required accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/>
+                <button id="analyzeBtn" onclick="handleInitialUpload()">Analyze File</button>
+            </div>
+            <div id="draft-review-view" style="display:none;">
+                <div id="loader-container">
+                    <div class="loader"></div>
+                    <p id="loader-text" style="text-align: center; font-weight: 600; color: var(--muted);">MAS is analyzing the document... Please wait.</p>
+                </div>
+                <form id="draftForm" style="display:none;">
+                    <input type="hidden" id="letterId" />
+                    <h2>Review and Submit</h2>
+                    <p><strong>Step 2:</strong> Correct any details below and click "Submit for Approval" to send the letter into the workflow.</p>
+                    <label for="subject">Subject:</label>
+                    <input id="subject" type="text" required />
+                    <label for="letterType">Letter Type:</label>
+                    <select id="letterType" required>
+                        <option value="Permission">Permission</option>
+                        <option value="Payment">Payment</option>
+                    </select>
+                    <label for="amount">Amount:</label>
+                    <input id="amount" type="number" placeholder="0" />
+                    <button type="submit">Submit for Approval</button>
+                </form>
+            </div>
+        </section>
+        <section id="records" class="card" style="display:none;">
+            <div class="toolbar">
+                <h2 id="recordsTitle">Uploaded Letters</h2>
+                <button id="reloadBtn" class="btn secondary"><i class="fas fa-sync-alt"></i> Refresh</button>
+            </div>
+            <div class="search-bar">
+                <select id="searchType" aria-label="Search category"><option value="subject" selected>Subject</option><option value="id">ID</option><option value="date">Date</option><option value="amount">Amount</option></select>
+                <input id="searchInput" type="text" aria-label="Search letters" />
+            </div>
+            <div class="filter-bar">
+              <button class="btn" id="needActionBtn" onclick="togglePriorityLabels()">⚡ Need Action</button>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>ID</th><th>Subject</th><th>Type</th><th>Amount</th><th>Date</th><th>Current Stage</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody id="lettersBody"></tbody>
+                    <tfoot><tr id="noResults" style="display: none;"><td colspan="8">No letters found.</td></tr></tfoot>
+                </table>
+            </div>
+            <div class="pagination-controls">
+                <button id="prevPageBtn" class="btn">« Previous</button>
+                <span id="pageInfo"></span>
+                <button id="nextPageBtn" class="btn">Next »</button>
+            </div>
+        </section>
+        <section id="password" class="card" style="display:none;">
+            <h2>Change Password</h2>
+            <form onsubmit="event.preventDefault(); alert('Password updated successfully!');">
+                <label for="oldPwd">Old Password:</label><input id="oldPwd" type="password" required />
+                <label for="newPwd">New Password:</label><input id="newPwd" type="password" required />
+                <label for="confirmPwd">Confirm Password:</label><input id="confirmPwd" type="password" required />
+                <button type="submit">Update Password</button>
+            </form>
+        </section>
+        <section id="analysis" class="card" style="display:none;">
+            <h2 id="analyticsTitle">📊 Department Analytics</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Pending by Stage</h3>
+                    <ul id="pendingList"><li>Loading...</li></ul>
+                </div>
+                <div class="stat-card">
+                    <h3>Overdue Letters</h3>
+                    <p class="stat-count" id="overdueCount">0</p>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-box">
+                    <h3>Letters by Type</h3>
+                    <canvas id="typeChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>Letters by Status</h3>
+                    <canvas id="statusChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>Monthly Upload Trend</h3>
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
 </div>
 <div id="liveStatus" class="sr-updates" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  let clerkLettersData = [];
-  let filteredData = [];
-  let currentPage = 1;
-  const rowsPerPage = 7;
-  const paymentPipeline = ['Clerk', 'Dean', 'Registrar', 'VC', 'Accounts'];
-  const permissionPipeline = ['Clerk', 'Dean', 'Registrar', 'VC'];
+    const token = localStorage.getItem('authToken');
+    let allLettersData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    const rowsPerPage = 7;
+    const paymentPipeline = ['Clerk', 'Dean', 'Registrar', 'VC', 'Accounts'];
+    const permissionPipeline = ['Clerk', 'Dean', 'Registrar', 'VC'];
+    let clerkDepartment = 'Your Department';
+    let statusChartInstance, typeChartInstance, monthlyChartInstance;
+    
+    function getPriorityLabel(score) {
+       if (score >= 80) return '🔴 High Priority';
+       if (score >= 60) return '🟠 Medium Priority';
+       return '🟢 Normal Priority';
+    }
+    let priorityVisible = false;
 
-  function showSection(id) {
-    document.querySelectorAll('main .card').forEach(div => div.style.display = 'none');
-    document.getElementById(id).style.display = 'block';
-    document.querySelectorAll('#navLinks li').forEach(li => li.classList.remove('active'));
-    document.getElementById(`nav-${id}`).classList.add('active');
-  }
+function togglePriorityLabels() {
+  priorityVisible = !priorityVisible;
+  const labels = document.querySelectorAll('.priority-label');
+  labels.forEach(label => {
+    label.style.display = priorityVisible ? 'block' : 'none';
+  });
 
-  function logout() { localStorage.removeItem('authToken'); window.location.href = './login.html'; }
-  function announce(message) {
-      const liveRegion = document.getElementById('liveStatus');
-      liveRegion.textContent = message;
-      liveRegion.style.display = 'block';
-      setTimeout(() => { liveRegion.style.display = 'none'; }, 3000);
-  }
+  const btn = document.getElementById('needActionBtn');
+  btn.textContent = priorityVisible ? '⬆ Hide Priority Labels' : '⚡ Need Action';
+}
 
-  function createPipelineHTML(letter) {
-      const pipeline = letter.type === 'Payment' ? paymentPipeline : permissionPipeline;
-      const currentIndex = pipeline.indexOf(letter.stage);
-      let html = '<div class="pipeline-container"><ol style="list-style:none; padding:0;" class="pipeline">';
-      pipeline.forEach((stageName, index) => {
-          let statusClass = 'pending'; let iconContent = index + 1;
-          if (letter.status === 'Approved') { statusClass = 'completed'; iconContent = '&#10003;';
-          } else if (index < currentIndex) { statusClass = 'completed'; iconContent = '&#10003;';
-          } else if (index === currentIndex) {
-              if (letter.status === 'Rejected') { statusClass = 'rejected'; iconContent = '&times;';
-              } else { statusClass = 'current'; }
-          }
-          html += `<li class="pipeline-step ${statusClass}"><div class="step-icon">${iconContent}</div><div class="step-label">${stageName}</div></li>`;
-      });
-      return html + '</ol></div>';
-  }
+    // --- UI Navigation ---
+    function showSection(id) {
+        document.querySelectorAll('main > section').forEach(div => div.style.display = 'none');
+        document.getElementById(id).style.display = 'block';
+        document.querySelectorAll('#navLinks li').forEach(li => li.classList.remove('active'));
+        document.getElementById(`nav-${id}`).classList.add('active');
+        if (id === 'records') fetchLetters();
+    
+        if (id === 'analysis') fetchAnalytics();
+    }
+    function logout() {
+        localStorage.removeItem('authToken');
+        window.location.href = './login.html';
+    }
+    
+    function announce(message) {
+        const statusEl = document.getElementById('liveStatus');
+        statusEl.textContent = message;
+        statusEl.style.display = 'block';
+        setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+    }
 
-  // Replace the entire old populateTable function with this new one
+    // --- Two-Step MAS Submission Logic ---
+    function resetUploadView() {
+        document.getElementById('initial-upload-view').style.display = 'block';
+        document.getElementById('draft-review-view').style.display = 'none';
+        document.getElementById('loader-container').style.display = 'block';
+        document.getElementById('draftForm').style.display = 'none';
+        document.getElementById('file').value = '';
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = 'Analyze File';
+    }
+
+    async function fetchAnalytics() {
+        if (!token) { logout(); return; }
+        
+        // Target new elements
+        const titleEl = document.getElementById('analyticsTitle');
+        const overdueEl = document.getElementById('overdueCount');
+        const pendingEl = document.getElementById('pendingList');
+        
+        titleEl.textContent = `Analytics for ${clerkDepartment}`;
+        overdueEl.textContent = '...';
+        pendingEl.innerHTML = '<li>Loading...</li>';
+
+        try {
+            const response = await fetch('http://localhost:3000/api/analysis', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) logout();
+                throw new Error('Failed to fetch analysis data');
+            }
+
+            const data = await response.json();
+            
+            // --- Populate New Stat Cards ---
+            // Metric 4: Overdue Count
+            overdueEl.textContent = data.overdueCount || 0;
+            
+            // Metric 5: Pending by Stage
+            pendingEl.innerHTML = ''; // Clear "Loading..."
+            if (data.pendingByStage && data.pendingByStage.length > 0) {
+                data.pendingByStage.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = `${item.stage}: ${item.count}`;
+                    pendingEl.appendChild(li);
+                });
+            } else {
+                pendingEl.innerHTML = '<li>No pending letters</li>';
+            }
+            
+            // --- Render Charts ---
+            renderStatusChart(data.statusTotals || []);
+            renderTypeChart(data.typeTotals || []);
+            renderMonthlyChart(data.monthlyTrend || []); // This will now work
+
+        } catch (error) {
+            console.error('Failed to fetch analytics:', error);
+            announce('Could not load analytics data.');
+            overdueEl.textContent = 'Error';
+            pendingEl.innerHTML = '<li>Error</li>';
+        }
+    }
+
+    function renderStatusChart(data) {
+        const ctx = document.getElementById('statusChart').getContext('2d');
+        if (statusChartInstance) {
+            statusChartInstance.destroy(); // Destroy old chart before drawing new one
+        }
+        
+        const labels = data.map(item => item.status);
+        const counts = data.map(item => item.count);
+
+        statusChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Letter Status',
+                    data: counts,
+                    backgroundColor: [
+                        '#f39c12', // Pending/Submitted/Overdue
+                        '#27ae60', // Approved
+                        '#e74c3c', // Rejected
+                        '#6c5ce7', // ML_DRAFTED
+                        '#3498db'  // Other (ActionTaken, etc.)
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    }
+
+    function renderTypeChart(data) {
+        const ctx = document.getElementById('typeChart').getContext('2d');
+        if (typeChartInstance) {
+            typeChartInstance.destroy();
+        }
+
+        const labels = data.map(item => item.classification);
+        const counts = data.map(item => item.count);
+
+        typeChartInstance = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Letter Type',
+                    data: counts,
+                    backgroundColor: ['#6c5ce7', '#0984e3']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    }
+
+    function renderMonthlyChart(data) {
+        const ctx = document.getElementById('monthlyChart').getContext('2d');
+        if (monthlyChartInstance) {
+            monthlyChartInstance.destroy();
+        }
+        
+        const labels = data.map(item => item.month);
+        const counts = data.map(item => item.count);
+
+        monthlyChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Submissions',
+                    data: counts,
+                    backgroundColor: 'rgba(108, 92, 231, 0.6)',
+                    borderColor: 'rgba(108, 92, 231, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    async function handleInitialUpload() {
+        const fileInput = document.getElementById('file');
+        const file = fileInput.files[0];
+        if (!file) { return alert('Please select a file to upload.'); }
+
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        analyzeBtn.disabled = true;
+        analyzeBtn.textContent = 'Analyzing...';
+
+        document.getElementById('initial-upload-view').style.display = 'none';
+        document.getElementById('draft-review-view').style.display = 'block';
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            // --- FIX 1 ---
+            // Changed URL to /api/autofill to match server.js (line 109)
+            const response = await fetch('http://localhost:3000/api/autofill', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Initial upload failed');
+            
+            // Start polling for the draft status
+            pollForDraft(data.letterId);
+
+        } catch (error) {
+            console.error('Initial upload failed:', error);
+            alert(`Error during file analysis: ${error.message}`);
+            resetUploadView();
+        }
+    }
+
+    // --- FIX 2 ---
+    // Rewritten pollForDraft function to call the correct endpoint
+    async function pollForDraft(letterId) {
+        const pollInterval = 2000;
+        const maxAttempts = 40;
+        let attempts = 0;
+
+        const intervalId = setInterval(async () => {
+            if (attempts >= maxAttempts) {
+                clearInterval(intervalId);
+                alert('MAS analysis timed out. Please fill the form manually.');
+                // Fill with placeholder data so clerk can submit
+                autofillForm({ id: letterId, subject: 'Analysis Timed Out - Please Enter Manually', type: 'Permission', amount: 0 });
+                return;
+            }
+            try {
+                // Call the main 'GET /api' endpoint
+                const response = await fetch(`http://localhost:3000/api`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const letters = await response.json();
+                    // Find the specific letter we're waiting for
+                    const letter = letters.find(l => l.id === letterId);
+
+                    if (letter && letter.status === 'ML_DRAFTED') {
+                        // Success! The Python agent finished.
+                        clearInterval(intervalId);
+                        autofillForm(letter);
+                    } else if (letter && letter.status === 'ERROR') {
+                        // The Python agent failed.
+                        clearInterval(intervalId);
+                        alert(`MAS Agent failed to process the document: ${letter.remarks || 'Unknown error'}`);
+                        resetUploadView();
+                    } else {
+                        // Status is still 'ML_OCR' or something else, keep waiting
+                        attempts++;
+                        document.getElementById('loader-text').textContent = `MAS is analyzing... (Attempt ${attempts}/${maxAttempts})`;
+                    }
+                }
+            } catch (error) {
+                clearInterval(intervalId);
+                console.error('Polling failed:', error);
+                alert('Error while waiting for MAS analysis.');
+                resetUploadView();
+            }
+        }, pollInterval);
+    }
+
+    function autofillForm(letter) {
+        document.getElementById('loader-container').style.display = 'none';
+        document.getElementById('draftForm').style.display = 'block';
+        document.getElementById('letterId').value = letter.id;
+        document.getElementById('subject').value = letter.subject;
+        // The LCA agent sets 'type', but 'classification' is also set. Let's be robust.
+        document.getElementById('letterType').value = letter.type || letter.classification || 'Permission';
+        document.getElementById('amount').value = letter.amount || '';
+    }
+    
+    // --- FIX 3 ---
+    // Modified form submission to match PUT /api/:id and add 'action: finalSubmit'
+    document.getElementById('draftForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const letterId = document.getElementById('letterId').value;
+        
+        // This 'action' field is CRITICAL for server.js (line 145)
+        const body = {
+            subject: document.getElementById('subject').value,
+            type: document.getElementById('letterType').value,
+            amount: document.getElementById('amount').value || 0,
+            action: 'finalSubmit' 
+        };
+
+        try {
+            // Change to PUT and update URL
+            const response = await fetch(`http://localhost:3000/api/${letterId}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Final submission failed');
+            
+            alert(data.message || 'Letter submitted for approval!');
+            resetUploadView();
+            showSection('records'); // Switch to records view
+            
+        } catch(error) {
+            console.error('Final submission failed:', error);
+            alert(`Failed to submit the letter: ${error.message}`);
+        }
+    });
+
+    // --- "View Letters" Table Logic ---
+    async function fetchLetters() {
+        if (!token) { logout(); return; }
+        try {
+            // --- FIX 4 ---
+            // Changed URL from /api/letters to /api
+            const response = await fetch('http://localhost:3000/api', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!response.ok) { if (response.status === 401 || response.status === 403) logout(); return; }
+            allLettersData = await response.json();
+            performSearch();
+        } catch (error) { console.error('Failed to fetch letters:', error); }
+    }
+
+   
+//     function populateTable(data) {
+//     const tableBody = document.getElementById('lettersBody');
+//     tableBody.innerHTML = '';
+
+//     // --- 1️⃣ Sort by date (newest first) ---
+//     data.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+//     // --- Optional Filter: If 'Need Action' is active, show only high priority ---
+//     if (window.filterNeedActionActive) {
+//         data = data.filter(l => (l.priorityScore || 0) >= 0.75); // adjust threshold if needed
+//     }
+
+//     const startIndex = (currentPage - 1) * rowsPerPage;
+//     const paginatedData = data.slice(startIndex, startIndex + rowsPerPage);
+//     document.getElementById('noResults').style.display = data.length === 0 ? 'table-row' : 'none';
+    
+//     paginatedData.forEach(letter => {
+//         const mainRow = tableBody.insertRow();
+
+//         let actionButtonHTML = `<button class="btn details-btn">View Tracking</button>`;
+//         let downloadButtonHTML = '';
+
+//         const signedPath = letter.deanSignedPath || letter.registrarSignedPath || letter.signedFilePath;
+//         if (signedPath) {
+//             const downloadUrl = `http://localhost:3000/${signedPath.replace(/\\/g, '/')}`;
+//             downloadButtonHTML = `<a href="${downloadUrl}" target="_blank" class="btn download-btn" download>Signed Copy</a>`;
+//         }
+
+//         // --- 2️⃣ Priority label logic ---
+//         let priorityLabel = 'Normal Priority';
+//         if (letter.priorityScore >= 0.75) priorityLabel = '🔥 High Priority';
+//         else if (letter.priorityScore >= 0.4) priorityLabel = '⚠️ Medium Priority';
+
+//         // --- 3️⃣ Status display logic ---
+//         let statusText = letter.status.replace('_', ' ');
+//         if (letter.status === 'Pending' || letter.status === 'Overdue') statusText = `Pending @ ${letter.stage}`;
+//         else if (letter.status === 'Approved') statusText = `Approved`;
+//         else if (letter.status === 'ML_OCR') statusText = 'Analyzing...';
+//         else if (letter.status === 'ML_DRAFTED') statusText = 'Awaiting Your Review';
+//         else if (letter.status === 'Submitted') statusText = 'Submitted to MAS';
+//         else if (letter.status === 'ActionTaken') statusText = 'Processing...';
+
+//         // --- 4️⃣ Render main row ---
+//         mainRow.innerHTML = `
+//             <td>
+//                 <div>
+//                     <strong>${letter.id}</strong><br>
+//                     <small class="priority-label">${priorityLabel}</small>
+//                 </div>
+//             </td>
+//             <td>${letter.subject}</td><td>${letter.type}</td>
+//             <td>${letter.amount > 0 ? `₹${letter.amount.toLocaleString('en-IN')}` : 'N/A'}</td>
+//             <td>${letter.date}</td><td><strong>${letter.stage}</strong></td>
+//             <td><span class="status-badge ${letter.status.toLowerCase()}" title="Remarks: ${letter.remarks || 'None'}">${statusText}</span></td>
+//             <td><div class="actions-cell">${actionButtonHTML}${downloadButtonHTML}</div></td>
+//         `;
+
+//         const detailsRow = tableBody.insertRow();
+//         detailsRow.className = 'details-row';
+//         detailsRow.insertCell().innerHTML = createPipelineHTML(letter);
+//         detailsRow.cells[0].colSpan = 8;
+//     });
+
+//     updatePaginationControls(data.length);
+// }
+
 
 function populateTable(data) {
-    const tableBody = document.getElementById('lettersBody');
-    tableBody.innerHTML = '';
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    const paginatedData = data.slice(startIndex, endIndex);
-    document.getElementById('noResults').style.display = data.length === 0 ? 'table-row' : 'none';
-    
-    paginatedData.forEach(letter => {
-        const mainRow = tableBody.insertRow();
-        
-        let actionButtonHTML = `<button class="btn details-btn">View Tracking</button>`;
-        if (letter.status === 'Rejected') {
-            actionButtonHTML = `<button class="btn resubmit-btn" onclick='prepareForResubmit(${JSON.stringify(letter)})'>Update & Resubmit</button>`;
-        }
-        
-        
-        let downloadButtonHTML = '';
-        if (letter.signedFilePath) {
-            const downloadUrl = `http://localhost:3000/${letter.signedFilePath.replace(/\\/g, '/')}`;
-            downloadButtonHTML = `<a href="${downloadUrl}" class="btn download-btn" download>Download Latest</a>`;
+        const tableBody = document.getElementById('lettersBody');
+        tableBody.innerHTML = '';
+
+        // --- 1. Sort by date (newest first) ---
+        data.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // --- 2. Correctly filter for "Need Action" ---
+        let filteredData = data;
+        if (window.filterNeedActionActive) {
+            filteredData = data.filter(l => l.status === 'ML_DRAFTED');
         }
 
-        let statusText = letter.status;
-        if (letter.status === 'Pending') { statusText = `Pending @ ${letter.stage}`; }
-        else if (letter.status === 'Approved' || letter.status === 'Validated') { statusText = `Approved by ${letter.stage}`; }
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const paginatedData = filteredData.slice(startIndex, startIndex + rowsPerPage);
+        document.getElementById('noResults').style.display = filteredData.length === 0 ? 'table-row' : 'none';
         
-        mainRow.innerHTML = `
-            <td>${letter.id}</td><td>${letter.subject}</td><td>${letter.type}</td>
-            <td>${letter.amount > 0 ? `₹${letter.amount.toLocaleString('en-IN')}` : 'N/A'}</td>
-            <td>${letter.date}</td><td><strong style="color:var(--primary);">${letter.stage}</strong></td>
-            <td><span class="status-badge ${letter.status.toLowerCase()}" title="Remarks: ${letter.remarks || 'None'}">${statusText}</span></td>
-            <td><div class="actions-cell">${actionButtonHTML}${downloadButtonHTML}</div></td>
-        `;
+        paginatedData.forEach(letter => {
+            const mainRow = tableBody.insertRow();
 
-        const detailsRow = tableBody.insertRow();
-        detailsRow.className = 'details-row';
-        detailsRow.insertCell().innerHTML = createPipelineHTML(letter);
-        detailsRow.cells[0].colSpan = 8;
-    });
-    updatePaginationControls(data.length);
-}
+            let actionButtonHTML = `<button class="btn details-btn">View Tracking</button>`;
+            let downloadButtonHTML = '';
+
+            const signedPath = letter.deanSignedPath || letter.registrarSignedPath || letter.signedFilePath;
+            if (signedPath) {
+                const downloadUrl = `http://localhost:3000/${signedPath.replace(/\\/g, '/')}`;
+                downloadButtonHTML = `<a href="${downloadUrl}" target="_blank" class="btn download-btn" download>Signed Copy</a>`;
+            }
+
+            // --- 3. Priority label logic (Corrected) ---
+            let priorityHtml = '';
+            const score = letter.priorityScore || 0; // Get the score (e.g., 80)
+
+            if (score >= 70) { // High Priority
+                priorityHtml = `<span style="font-weight: 700; font-size: 12px; color: var(--danger); display: block; margin-top: 2px;">🔥 High Priority</span>`;
+            } else if (score >= 50) { // Medium Priority
+                priorityHtml = `<span style="font-weight: 600; font-size: 12px; color: var(--warn); display: block; margin-top: 2px;">⚠️ Medium Priority</span>`;
+            } else { // Normal Priority
+                priorityHtml = `<span style="font-weight: 600; font-size: 12px; color: var(--muted); display: block; margin-top: 2px;">Normal Priority</span>`;
+            }
+
+            // --- 4. Status display logic ---
+            let statusText = letter.status.replace('_', ' ');
+            if (letter.status === 'Pending' || letter.status === 'Overdue') statusText = `Pending @ ${letter.stage}`;
+            else if (letter.status === 'Approved') statusText = `Approved`;
+            else if (letter.status === 'ML_OCR') statusText = 'Analyzing...';
+            else if (letter.status === 'ML_DRAFTED') statusText = 'Awaiting Your Review';
+            else if (letter.status === 'Submitted') statusText = 'Submitted to MAS';
+            else if (letter.status === 'ActionTaken') statusText = 'Processing...';
+
+            // --- 5. Render main row ---
+            mainRow.innerHTML = `
+                <td>
+                    <strong>${letter.id}</strong>
+                    ${priorityHtml} </td>
+                <td>${letter.subject}</td><td>${letter.type}</td>
+                <td>${letter.amount > 0 ? `₹${letter.amount.toLocaleString('en-IN')}` : 'N/A'}</td>
+                <td>${letter.date}</td><td><strong>${letter.stage}</strong></td>
+                <td><span class="status-badge ${letter.status.toLowerCase()}" title="Remarks: ${letter.remarks || 'None'}">${statusText}</span></td>
+                <td><div class="actions-cell">${actionButtonHTML}${downloadButtonHTML}</div></td>
+            `;
+
+            const detailsRow = tableBody.insertRow();
+            detailsRow.className = 'details-row';
+            detailsRow.insertCell().innerHTML = createPipelineHTML(letter);
+            detailsRow.cells[0].colSpan = 8;
+        });
+
+        // Update pagination for the *filtered* data
+        updatePaginationControls(filteredData.length);
+    }
+
+
+
+    function createPipelineHTML(letter) {
+        // Use 'classification' field set by MAS agent
+        const pipeline = (letter.classification || letter.type) === 'Payment' ? paymentPipeline : permissionPipeline;
+        const currentIndex = pipeline.indexOf(letter.stage);
+        let html = '<div class="pipeline-container"><ol class="pipeline">';
+        
+        let completed = false;
+        if (letter.status === 'Approved') completed = true;
+        
+        pipeline.forEach((stageName, index) => {
+            let statusClass = 'pending'; 
+            let iconContent = index + 1;
+            
+            if (completed || index < currentIndex) { 
+                statusClass = 'completed'; iconContent = '&#10003;';
+            } else if (index === currentIndex) {
+                if (letter.status === 'Rejected') { statusClass = 'rejected'; iconContent = '&times;'; }
+                else if (letter.status === 'Pending' || letter.status === 'Overdue' || letter.status === 'ActionTaken') { statusClass = 'current'; }
+                else if (letter.status === 'Submitted' || letter.status === 'ML_DRAFTED' || letter.status === 'ML_OCR') { statusClass = 'current'; }
+            }
+            
+            html += `<li class="pipeline-step ${statusClass}"><div class="step-icon">${iconContent}</div><div class="step-label">${stageName}</div></li>`;
+        });
+        return html + '</ol></div>';
+    }
   
-  function updatePaginationControls(totalItems) {
-    const pageInfo = document.getElementById('pageInfo');
-    const prevPageBtn = document.getElementById('prevPageBtn');
-    const nextPageBtn = document.getElementById('nextPageBtn');
-    const totalPages = Math.ceil(totalItems / rowsPerPage);
-    if (totalPages <= 1) {
-        pageInfo.parentElement.style.display = 'none';
-    } else {
-        pageInfo.parentElement.style.display = 'flex';
-        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-        prevPageBtn.disabled = currentPage === 1;
-        nextPageBtn.disabled = currentPage === totalPages;
-    }
-  }
-
-  function prepareForResubmit(letter) {
-    showSection('upload');
-    document.getElementById('uploadTitle').textContent = `Update & Resubmit Letter: ${letter.id}`;
-    document.getElementById('letterId').value = letter.id;
-    document.getElementById('subject').value = letter.subject;
-    document.getElementById('letterType').value = letter.type;
-    document.getElementById('amount').value = letter.amount > 0 ? letter.amount : '';
-    document.getElementById('submitBtn').textContent = 'Resubmit to Dean';
-    document.getElementById('file').required = false; 
-    document.getElementById('file-label-required').style.display = 'none';
-  }
-
-  function resetUploadForm() {
-    document.getElementById('uploadTitle').textContent = 'Upload New Letter';
-    document.getElementById('uploadForm').reset();
-    document.getElementById('letterId').value = '';
-    document.getElementById('submitBtn').textContent = 'Submit for Approval';
-    document.getElementById('file').required = true;
-    document.getElementById('file-label-required').style.display = 'inline';
-  }
-
-  async function handleFormSubmit(event) {
-    event.preventDefault();
-    const letterId = document.getElementById('letterId').value;
-    const token = localStorage.getItem('authToken');
-    const formData = new FormData();
-    formData.append('subject', document.getElementById('subject').value);
-    formData.append('type', document.getElementById('letterType').value);
-    formData.append('amount', document.getElementById('amount').value || 0);
-    const newFile = document.getElementById('file').files[0];
-    if (newFile) formData.append('file', newFile);
-    let url, method, successMessage, errorMessage;
-    if (letterId) {
-        url = `http://localhost:3000/api/letters/${letterId}/resubmit`;
-        method = 'POST';
-        successMessage = 'Letter resubmitted successfully!';
-        errorMessage = 'Error resubmitting letter.';
-    } else {
-        url = 'http://localhost:3000/api/letters';
-        method = 'POST';
-        formData.append('date', new Date().toISOString().split('T')[0]);
-        successMessage = 'Letter submitted successfully!';
-        errorMessage = 'Error uploading letter.';
-    }
-    try {
-        const response = await fetch(url, { method, headers: { 'Authorization': `Bearer ${token}` }, body: formData });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Request failed');
-        if(data.estimatedTime) successMessage += ` Est. approval: ${data.estimatedTime}`;
-        announce(successMessage);
-        resetUploadForm();
-        await fetchLetters();
-        showSection('records');
-    } catch (error) {
-        announce(errorMessage);
-        console.error(error);
-    }
-  }
-
-  function performSearch() {
-    const type = document.getElementById('searchType').value;
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    filteredData = clerkLettersData.filter(letter => (letter[type] || '').toString().toLowerCase().includes(query));
-    currentPage = 1;
-    populateTable(filteredData);
-  }
-
-  function handleSearchTypeChange() {
-      const searchInput = document.getElementById('searchInput');
-      const searchType = document.getElementById('searchType').value;
-      searchInput.type = searchType === 'date' ? 'date' : 'text';
-      searchInput.placeholder = `Search by ${searchType.charAt(0).toUpperCase() + searchType.slice(1)}...`;
-      searchInput.value = '';
-      performSearch();
-  }
-
-  async function fetchLetters() {
-      const token = localStorage.getItem('authToken');
-      if (!token) { logout(); return; }
-      try {
-          const response = await fetch('http://localhost:3000/api/letters', { headers: { 'Authorization': `Bearer ${token}` } });
-          if (!response.ok) { if (response.status === 401 || response.status === 403) logout(); return; }
-          clerkLettersData = await response.json();
-          performSearch();
-      } catch (error) { console.error('Failed to fetch letters:', error); }
-  }
-
-  document.addEventListener('DOMContentLoaded', async () => {
-    const token = localStorage.getItem('authToken');
-    if (!token) { logout(); return; }
-    try {
-        const decodedToken = JSON.parse(atob(token.split('.')[1]));
-        const dept = decodedToken.department || 'Your';
-        document.getElementById('headerTitle').textContent = `Clerk Dashboard - ${dept} Department`;
-        document.getElementById('uploadTitle').textContent = `Upload New Letter for ${dept}`;
-        document.getElementById('recordsTitle').textContent = `Uploaded Letters for ${dept}`;
-    } catch (e) { console.error("Could not decode token", e); }
-    
-    await fetchLetters();
-    handleSearchTypeChange();
-
-    document.getElementById('uploadForm').addEventListener('submit', handleFormSubmit);
-    document.getElementById('searchInput').addEventListener('input', performSearch);
-    document.getElementById('searchType').addEventListener('change', handleSearchTypeChange);
-    
-    document.getElementById('lettersBody').addEventListener('click', (event) => {
-        if (event.target.classList.contains('details-btn')) {
-            const btn = event.target;
-            const detailsRow = btn.closest('tr').nextElementSibling;
-            detailsRow.style.display = detailsRow.style.display === 'none' ? 'table-row' : 'none';
-            btn.textContent = detailsRow.style.display === 'none' ? 'View Tracking' : 'Hide Tracking';
+    function updatePaginationControls(totalItems) {
+        const pageInfo = document.getElementById('pageInfo');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const totalPages = Math.ceil(totalItems / rowsPerPage);
+        if (totalPages <= 1) {
+            pageInfo.parentElement.style.display = 'none';
+        } else {
+            pageInfo.parentElement.style.display = 'flex';
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages;
         }
+    }
+
+    function performSearch() {
+        const type = document.getElementById('searchType').value;
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        filteredData = allLettersData.filter(letter => (letter[type] || '').toString().toLowerCase().includes(query));
+        currentPage = 1;
+        populateTable(filteredData);
+    }
+
+    function handleSearchTypeChange() {
+        const searchInput = document.getElementById('searchInput');
+        const searchType = document.getElementById('searchType').value;
+        searchInput.type = searchType === 'date' ? 'date' : 'text';
+        searchInput.placeholder = `Search by ${searchType.charAt(0).toUpperCase() + searchType.slice(1)}...`;
+        searchInput.value = '';
+        performSearch();
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (!token) { logout(); return; }
+        
+        try {
+            const decodedToken = JSON.parse(atob(token.split('.')[1]));
+            
+            // --- THIS IS THE NEW LINE YOU NEED TO ADD ---
+            // It saves the department from the token into the global variable
+            clerkDepartment = decodedToken.department || 'Your Department'; 
+            // --- END OF NEW LINE ---
+            
+            // These lines now use the new variable for consistency
+            document.getElementById('headerTitle').textContent = `Clerk Dashboard - ${clerkDepartment}`;
+            document.getElementById('uploadTitle').textContent = `Upload New Letter for ${clerkDepartment}`;
+            document.getElementById('recordsTitle').textContent = `Uploaded Letters for ${clerkDepartment}`;
+
+        } catch (e) { console.error("Could not decode token", e); }
+        
+        await fetchLetters();
+        handleSearchTypeChange();
+
+        document.getElementById('searchInput').addEventListener('input', performSearch);
+        document.getElementById('searchType').addEventListener('change', handleSearchTypeChange);
+        
+        document.getElementById('lettersBody').addEventListener('click', (event) => {
+            if (event.target.classList.contains('details-btn')) {
+                const btn = event.target;
+                const detailsRow = btn.closest('tr').nextElementSibling;
+                detailsRow.style.display = detailsRow.style.display === 'none' ? 'table-row' : 'none';
+                btn.textContent = detailsRow.style.display === 'none' ? 'View Tracking' : 'Hide Tracking';
+            }
+        });
+
+        document.getElementById('reloadBtn').addEventListener('click', () => {
+            announce('Refreshing letters...');
+            fetchLetters();
+        });
+
+        document.getElementById('prevPageBtn').addEventListener('click', () => {
+            if (currentPage > 1) { currentPage--; populateTable(filteredData); }
+        });
+        document.getElementById('nextPageBtn').addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            if (currentPage < totalPages) { currentPage++; populateTable(filteredData); }
+        });
+       document.getElementById('filterNeedActionBtn').addEventListener('click', () => {
+            window.filterNeedActionActive = !window.filterNeedActionActive;
+            populateTable(allLettersData);
+        });
+    });
+</script>
+<script>
+async function loadAnalytics() {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  try {
+    const response = await fetch('http://localhost:3000/api/analysis', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Failed to fetch analytics.');
+
+    const data = await response.json();
+    console.log('Analytics data:', data);
+    renderAnalytics(data);
+  } catch (err) {
+    console.error('Error loading analytics:', err);
+  }
+}
+
+function renderAnalytics(data) {
+  // Update counts and lists
+  document.getElementById('overdueCount').innerText =
+    data.statusTotals.find(x => x.status === 'Overdue')?.count || 0;
+
+  const pendingList = document.getElementById('pendingList');
+  pendingList.innerHTML = '';
+  data.statusTotals
+    .filter(x => x.status === 'Pending')
+    .forEach(x => {
+      const li = document.createElement('li');
+      li.textContent = `${x.status} — ${x.count}`;
+      pendingList.appendChild(li);
     });
 
-    document.getElementById('reloadBtn').addEventListener('click', () => {
-        announce('Refreshing letters...');
-        fetchLetters();
-    });
-
-    document.getElementById('prevPageBtn').addEventListener('click', () => {
-        if (currentPage > 1) { currentPage--; populateTable(filteredData); }
-    });
-    document.getElementById('nextPageBtn').addEventListener('click', () => {
-        const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-        if (currentPage < totalPages) { currentPage++; populateTable(filteredData); }
-    });
+  // === Chart 1: Letters by Type ===
+  const ctx1 = document.getElementById('typeChart').getContext('2d');
+  new Chart(ctx1, {
+    type: 'pie',
+    data: {
+      labels: data.typeTotals.map(x => x.classification),
+      datasets: [{
+        data: data.typeTotals.map(x => x.count),
+        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+      }]
+    }
   });
+
+  // === Chart 2: Letters by Status ===
+  const ctx2 = document.getElementById('statusChart').getContext('2d');
+  new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: data.statusTotals.map(x => x.status),
+      datasets: [{
+        label: 'Letters',
+        data: data.statusTotals.map(x => x.count),
+        backgroundColor: '#4CAF50'
+      }]
+    }
+  });
+
+  // === Chart 3: Monthly Upload Trend ===
+  const ctx3 = document.getElementById('monthlyChart').getContext('2d');
+  new Chart(ctx3, {
+    type: 'line',
+    data: {
+      labels: data.monthlyTrend.map(x => x.month),
+      datasets: [{
+        label: 'Letters Uploaded',
+        data: data.monthlyTrend.map(x => x.count),
+        borderColor: '#2196F3',
+        fill: false
+      }]
+    }
+  });
+}
+
+// Load analytics when the section is shown
+window.addEventListener('DOMContentLoaded', loadAnalytics);
 </script>
 </body>
 </html>
